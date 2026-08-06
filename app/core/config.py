@@ -52,6 +52,14 @@ class Settings(BaseSettings):
     # --- LGPD ---
     lgpd_politica_versao: str = "1.0"
 
+    # --- Sandbox de execucao de codigo (Parte 5) ---
+    sandbox_docker_image: str = "python:3.12-slim"
+    sandbox_timeout_segundos: int = 5
+    sandbox_memoria_mb: int = 128
+    sandbox_cpus: str = "0.5"
+    sandbox_pids_limit: int = 64
+    sandbox_max_casos_por_submissao: int = 20
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

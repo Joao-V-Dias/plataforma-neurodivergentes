@@ -41,3 +41,11 @@ class CondicaoInvalidaError(Exception):
 
 class MatriculaDuplicadaError(Exception):
     """Aluno ja tem matricula ativa nesta turma."""
+
+
+class TagInvalidaError(Exception):
+    """Codigo de tag de problema nao existe/nao esta ativo."""
+
+
+class LinguagemNaoSuportadaError(Exception):
+    """Linguagem de programacao sem executor no sandbox (Parte 5)."""

@@ -11,9 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.rbac import papeis_a_partir_de
 from app.core.security import TokenExpiredError, TokenInvalidError, TokenType, decode_token
+from app.models.problema import Problema
 from app.models.turma import Turma
 from app.models.usuario import Papel, Usuario
-from app.repositories import turma_repository, usuario_repository
+from app.repositories import problema_repository, turma_repository, usuario_repository
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -118,3 +119,24 @@ async def get_turma_acessivel(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Voce nao tem acesso a esta turma.")
 
     return turma
+
+
+async def get_problema_acessivel(
+    problema_id: uuid.UUID,
+    usuario: Usuario = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Problema:
+    """Resolve o problema-alvo de rotas de banco de problemas (Parte 5):
+    Professor+ acessa qualquer problema da propria instituicao (para
+    gerenciar o banco); Aluno so acessa problemas vinculados a uma turma
+    em que tem matricula ativa."""
+    problema = await problema_repository.get_by_id(db, problema_id)
+    if problema is None or problema.instituicao_id != usuario.instituicao_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Problema nao encontrado.")
+
+    if usuario.papel == Papel.ALUNO and not await problema_repository.aluno_tem_acesso(
+        db, problema_id=problema_id, aluno_id=usuario.id
+    ):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Voce nao tem acesso a este problema.")
+
+    return problema

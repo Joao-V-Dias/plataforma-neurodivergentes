@@ -2,11 +2,13 @@
 
 Backend em Python 3.12+ / FastAPI / PostgreSQL / SQLAlchemy 2.0 (async) / Pydantic v2.
 
-> **Nota sobre este setup:** por decisão do time, a Parte 1 está rodando
-> **sem Docker** — API, PostgreSQL e Redis instalados e executados
-> diretamente na máquina. O código já está pronto para ser containerizado
-> mais tarde (Dockerfile/docker-compose podem ser adicionados sem
-> retrabalho, já que toda config já vem de variáveis de ambiente).
+> **Nota sobre este setup:** por decisão do time, a API, o PostgreSQL e o
+> Redis rodam **sem Docker** — instalados e executados diretamente na
+> máquina (Parte 1). A **Parte 5 é a exceção**: execução de código de
+> aluno precisa de isolamento real (container efêmero, sem rede, com
+> limites de CPU/memória/tempo), então o Docker Desktop é usado
+> especificamente para rodar cada submissão em um container `--rm`
+> descartável — nunca para hospedar a API em si.
 
 ## Estrutura do projeto
 
@@ -18,6 +20,7 @@ app/
   schemas/      # Schemas Pydantic (request/response)
   services/     # Regras de negócio
   repositories/ # Acesso a dados (queries)
+  sandbox/      # Executor de código sandboxado via Docker (Parte 5)
   ai/           # Integração com LLM (Parte 6)
   tests/        # Testes pytest
 alembic/        # Migrations de banco de dados
@@ -29,6 +32,10 @@ scripts/        # Scripts auxiliares de setup local (Postgres/Redis)
 - Python 3.12+ (testado também em 3.14)
 - PostgreSQL 16+ instalado localmente
 - Redis (ou build compatível) instalado localmente
+- Docker Desktop instalado e **rodando** — usado só pelo sandbox de
+  execução de código da Parte 5 (`docker run --rm --network none ...`),
+  não para hospedar a API. Sem o daemon do Docker ativo, submissões
+  falham com status `erro_interno`.
 
 ## Setup local (sem Docker)
 
@@ -193,15 +200,57 @@ Rotas: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
   histórico preservado (`ativo=false` + `desmatriculado_em`, nunca
   apagado); um aluno pode ser rematriculado depois de desmatriculado.
   Matricular exige que o alvo seja um Aluno da mesma instituição da turma.
-- **Progresso agregado por turma** (`GET /turmas/{id}/progresso`): entrega
-  a estrutura (por aluno: problemas resolvidos, tentativas, tempo gasto),
-  mas os números são **placeholder (zero)** até a Parte 5 existir — não há
-  ainda modelo de submissão/problema para agregar. Ver
-  `app/services/progresso_service.py`.
+- **Progresso agregado por turma** (`GET /turmas/{id}/progresso`): problemas
+  resolvidos, tentativas e tempo gasto, calculados a partir de `Submissao`
+  (Parte 5) — ver `app/services/progresso_service.py`.
 - **Área do aluno**: `GET /me/turmas` (turmas em que está matriculado) e
   `GET /me/turmas/{id}/progresso` (seu próprio progresso, 404 se não
   estiver matriculado) — um aluno nunca vê dados de turmas alheias nem o
   endpoint de gestão (`GET /turmas/{id}`, restrito a Professor+).
+
+## Banco de problemas e execução de código (Parte 5)
+
+- **Sandbox** (`app/sandbox/executor.py`): cada submissão roda num
+  container Docker efêmero (`docker run --rm`), verificado manualmente
+  antes de implementar:
+  - `--network none` — sem acesso à rede (DNS/conexão falham de propósito);
+  - `timeout {N}s` (coreutils, dentro do container) **+** timeout externo
+    do `subprocess` (fora do container) como rede de segurança — loop
+    infinito é interrompido, nunca trava a API;
+  - `--memory`/`--memory-swap`/`--cpus`/`--pids-limit` — estouro de
+    memória mata o processo (SIGKILL) sem derrubar o host;
+  - `--read-only` + `--tmpfs /tmp` — sem escrita persistente;
+  - `--user nobody` — nunca roda como root dentro do container.
+  - O código do aluno **nunca** é executado com `exec()`/`subprocess`
+    direto no processo da API — sempre por fora, via daemon Docker.
+  - Só **Python** é suportado por enquanto (`linguagem` é texto livre no
+    modelo, mas o executor só sabe rodar Python — decisão de escopo para
+    não expandir a superfície de ataque do sandbox nesta parte).
+  - Execução é **síncrona**: a requisição de submissão só retorna depois
+    de rodar todos os casos de teste (sem fila/worker em background —
+    decisão de escopo; ficaria para uma futura Parte de infraestrutura).
+- **CRUD de Problema** (`POST/GET /problemas`, `GET /problemas/{id}`):
+  enunciado, linguagem, nível de dificuldade, casos de teste **públicos**
+  (mostrados ao aluno) e **ocultos** (só usados para corrigir).
+- **Tags unificadas** (`GET /tags`, `app/models/problema.py:TagProblema`):
+  um único vocabulário com campo `categoria` distingue tags de tema
+  (`loops`, `recursao`...) dos metadados de dificuldade adaptativa exigidos
+  pelo escopo (`logica_sequencial`, `abstracao`, `memoria_trabalho`...) que
+  vão alimentar a IA da Parte 6.
+- **Vínculo a turma** (`POST /problemas/{id}/turmas`): um problema só fica
+  acessível a um aluno depois de vinculado a uma turma em que ele tem
+  matrícula ativa (`app/api/deps.py:get_problema_acessivel`).
+- **Submissão** (`POST /problemas/{id}/submissoes`): roda o código contra
+  cada caso de teste, grava um status geral (`aceito`, `reprovado`,
+  `erro_execucao`, `tempo_excedido`, `erro_interno` — o pior status entre
+  todos os casos) e o resultado por caso. **Nunca** expõe ao aluno, para um
+  caso oculto: entrada, saída esperada, saída obtida ou mensagem de erro —
+  só se passou ou não. Para casos públicos, a mensagem de erro é
+  sanitizada (`_sanitizar_stderr`): nunca inclui caminhos internos do
+  sandbox (`/sandbox/...`) nem a stack trace completa, só o tipo e a
+  mensagem da exceção.
+- Histórico: `GET /problemas/{id}/minhas-submissoes` (Aluno, só as
+  próprias) e `GET /problemas/{id}/submissoes` (Professor+, todas).
 
 ## Testes e lint
 
@@ -214,6 +263,10 @@ Os testes escrevem no banco Postgres local de verdade, mas cada teste roda
 dentro de uma transação revertida ao final (nada fica persistido). O
 rate limiting usa Redis de verdade também; um fixture `autouse` zera o
 Redis antes de cada teste para evitar que testes se atrapalhem entre si.
+Os testes de `app/tests/test_problemas.py` executam containers Docker de
+verdade (Parte 5) — mais lentos que o resto da suíte (~20s), mas é o único
+jeito honesto de validar isolamento/timeout real. Exigem o Docker Desktop
+rodando.
 
 ## Logging
 
@@ -239,7 +292,7 @@ Toda resposta de erro da API segue o mesmo formato:
 
 ## Próximas partes
 
-Banco de problemas e execução de código (Parte 5, que também vai
-preencher os números reais de `GET /turmas/{id}/progresso`), motor de IA
-adaptativa, frontend acessível e observabilidade/CI-CD — ver escopo
-completo do projeto.
+Motor de IA adaptativa (Parte 6, que vai usar as tags de tipo de
+raciocínio dos problemas e o perfil de neurodivergência/Big Five para
+calibrar as dicas), frontend acessível e observabilidade/CI-CD — ver
+escopo completo do projeto.
