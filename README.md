@@ -175,8 +175,33 @@ Rotas: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
   `GET/PUT /me/preferencias-acessibilidade`.
 - **Regra de visibilidade de dado sensível**: o próprio aluno sempre acessa
   seu perfil/Big Five; Professor/Coordenador/Diretor da mesma instituição
-  também acessam (`app/api/deps.py:get_aluno_acessivel`). Escopo por turma
-  específica (não a instituição inteira) fica para a Parte 4.
+  também acessam (`app/api/deps.py:get_aluno_acessivel`). Ainda é escopo de
+  instituição inteira, não da turma específica do aluno (pendência —
+  ver `docs/lgpd.md`, seção 8).
+
+## Gestão acadêmica: turmas e matrículas (Parte 4)
+
+- **Turma** (`app/models/turma.py`): nome, período, instituição e um
+  professor responsável (titular). Professor+ cria (`POST /turmas`); o
+  titular é automaticamente vinculado à turma no momento da criação.
+- **Co-docência**: múltiplos professores podem ser vinculados a uma turma
+  (`POST /turmas/{id}/professores`), além do titular.
+- **Visibilidade de turma**: Professor só vê/gerencia as turmas em que está
+  vinculado; Coordenador e Diretor veem/gerenciam todas as turmas da
+  própria instituição (`app/api/deps.py:get_turma_acessivel`).
+- **Matrícula/desmatrícula** (`POST/DELETE /turmas/{id}/matriculas`):
+  histórico preservado (`ativo=false` + `desmatriculado_em`, nunca
+  apagado); um aluno pode ser rematriculado depois de desmatriculado.
+  Matricular exige que o alvo seja um Aluno da mesma instituição da turma.
+- **Progresso agregado por turma** (`GET /turmas/{id}/progresso`): entrega
+  a estrutura (por aluno: problemas resolvidos, tentativas, tempo gasto),
+  mas os números são **placeholder (zero)** até a Parte 5 existir — não há
+  ainda modelo de submissão/problema para agregar. Ver
+  `app/services/progresso_service.py`.
+- **Área do aluno**: `GET /me/turmas` (turmas em que está matriculado) e
+  `GET /me/turmas/{id}/progresso` (seu próprio progresso, 404 se não
+  estiver matriculado) — um aluno nunca vê dados de turmas alheias nem o
+  endpoint de gestão (`GET /turmas/{id}`, restrito a Professor+).
 
 ## Testes e lint
 
@@ -214,6 +239,7 @@ Toda resposta de erro da API segue o mesmo formato:
 
 ## Próximas partes
 
-Gestão acadêmica (turmas, matrículas), banco de problemas, motor de IA
+Banco de problemas e execução de código (Parte 5, que também vai
+preencher os números reais de `GET /turmas/{id}/progresso`), motor de IA
 adaptativa, frontend acessível e observabilidade/CI-CD — ver escopo
 completo do projeto.

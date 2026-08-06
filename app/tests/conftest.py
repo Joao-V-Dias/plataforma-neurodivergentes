@@ -19,8 +19,9 @@ from app.core.database import engine, get_db
 from app.core.security import hash_password
 from app.main import app
 from app.models.instituicao import Instituicao
+from app.models.turma import Turma
 from app.models.usuario import Papel, Usuario
-from app.repositories import usuario_repository
+from app.repositories import turma_repository, usuario_repository
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -99,4 +100,21 @@ async def criar_usuario(
         papel=papel,
         instituicao_id=instituicao_id,
         is_active=is_active,
+    )
+
+
+async def criar_turma(
+    db: AsyncSession,
+    *,
+    instituicao_id: uuid.UUID,
+    professor_responsavel_id: uuid.UUID,
+    nome: str = "Turma de Teste",
+    periodo: str = "2026.1",
+) -> Turma:
+    return await turma_repository.create(
+        db,
+        instituicao_id=instituicao_id,
+        nome=nome,
+        periodo=periodo,
+        professor_responsavel_id=professor_responsavel_id,
     )

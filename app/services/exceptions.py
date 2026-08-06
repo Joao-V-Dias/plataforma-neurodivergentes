@@ -37,3 +37,7 @@ class AlvoInvalidoError(Exception):
 
 class CondicaoInvalidaError(Exception):
     """Codigo de condicao de neurodivergencia nao existe/nao esta ativo."""
+
+
+class MatriculaDuplicadaError(Exception):
+    """Aluno ja tem matricula ativa nesta turma."""

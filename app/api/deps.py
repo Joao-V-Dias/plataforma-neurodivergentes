@@ -11,8 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.rbac import papeis_a_partir_de
 from app.core.security import TokenExpiredError, TokenInvalidError, TokenType, decode_token
+from app.models.turma import Turma
 from app.models.usuario import Papel, Usuario
-from app.repositories import usuario_repository
+from app.repositories import turma_repository, usuario_repository
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -97,3 +98,23 @@ async def get_aluno_acessivel(
             "Voce nao tem permissao para acessar o perfil deste aluno.",
         )
     return aluno
+
+
+async def get_turma_acessivel(
+    turma_id: uuid.UUID,
+    usuario: Usuario = Depends(require_min_role(Papel.PROFESSOR)),
+    db: AsyncSession = Depends(get_db),
+) -> Turma:
+    """Resolve a turma-alvo de rotas de gestao academica (Parte 4):
+    Professor so acessa turmas em que esta vinculado (turma_professores);
+    Coordenador/Diretor acessam qualquer turma da propria instituicao."""
+    turma = await turma_repository.get_by_id(db, turma_id)
+    if turma is None or turma.instituicao_id != usuario.instituicao_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma nao encontrada.")
+
+    if usuario.papel == Papel.PROFESSOR and not await turma_repository.professor_vinculado(
+        db, turma_id, usuario.id
+    ):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Voce nao tem acesso a esta turma.")
+
+    return turma
