@@ -94,7 +94,16 @@ python -c "import secrets; print(secrets.token_urlsafe(64))"
 .venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-### 6. Subir a API
+### 6. Primeiro usuário (Diretor)
+
+Não existe endpoint público para criar um Diretor (de propósito — é uma
+ação administrativa rara e sensível). Rode o script de bootstrap:
+
+```powershell
+.venv\Scripts\python.exe scripts\seed_diretor.py --nome "Seu Nome" --email diretor@escola.com --senha "SenhaForte123"
+```
+
+### 7. Subir a API
 
 ```powershell
 .venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -103,12 +112,46 @@ python -c "import secrets; print(secrets.token_urlsafe(64))"
 - Swagger: http://127.0.0.1:8000/docs
 - Health check: http://127.0.0.1:8000/api/v1/health
 
+## Autenticação e autorização (Parte 2)
+
+- JWT com access token curto (15 min) + refresh token (7 dias) com
+  **rotação**: cada `/auth/refresh` invalida o token anterior e emite um
+  novo par. Reuso de um refresh token já rotacionado é tratado como sinal
+  de roubo de token e revoga todas as sessões do usuário.
+- Senhas com hash Argon2id (`app/core/security.py`), nunca texto puro.
+- RBAC hierárquico: `Diretor > Coordenador > Professor > Aluno`
+  (`app/api/deps.py`, `app/core/rbac.py`) — um papel de nível mais alto
+  acessa tudo que um mais baixo acessa.
+- Rate limiting (Redis) em `/auth/login` (padrão `5/minute`) e
+  `/auth/forgot-password` (`3/minute`) contra brute-force.
+- Auto-cadastro de aluno (`POST /auth/register`) nasce **inativo**,
+  aguardando aprovação (fluxo completo de aprovação vem na Parte 3/4).
+- Recuperação de senha: token de uso único, expira em 30 min, resposta
+  idêntica para e-mail existente/inexistente (anti-enumeration). Como
+  ainda não há serviço de e-mail configurado, o token só volta no corpo
+  da resposta fora de produção (`APP_ENV != production`) — em produção
+  seria enviado por e-mail e nunca retornado na API.
+- Trilha de auditoria de eventos de autenticação em `audit_logs`
+  (`app/services/audit.py`).
+- Ver `docs/lgpd.md` para a política de dados sensíveis (neurodivergência,
+  perfil psicológico) que a Parte 3 vai coletar.
+
+Rotas principais: `POST /auth/register`, `POST /auth/login`,
+`POST /auth/refresh`, `POST /auth/logout`, `POST /auth/forgot-password`,
+`POST /auth/reset-password`, `GET /auth/me`, `GET /usuarios`
+(Professor+, apenas para comprovar RBAC — CRUD completo vem na Parte 3).
+
 ## Testes e lint
 
 ```powershell
 .venv\Scripts\python.exe -m pytest
-.venv\Scripts\python.exe -m ruff check app alembic
+.venv\Scripts\python.exe -m ruff check app alembic scripts
 ```
+
+Os testes escrevem no banco Postgres local de verdade, mas cada teste roda
+dentro de uma transação revertida ao final (nada fica persistido). O
+rate limiting usa Redis de verdade também; um fixture `autouse` zera o
+Redis antes de cada teste para evitar que testes se atrapalhem entre si.
 
 ## Logging
 
@@ -134,6 +177,6 @@ Toda resposta de erro da API segue o mesmo formato:
 
 ## Próximas partes
 
-Autenticação/RBAC, modelagem de usuários e perfis de adaptação, gestão
-acadêmica, banco de problemas, motor de IA adaptativa, frontend acessível e
-observabilidade/CI-CD — ver escopo completo do projeto.
+Modelagem de usuários e perfis de adaptação (neurodivergência, Big Five),
+gestão acadêmica, banco de problemas, motor de IA adaptativa, frontend
+acessível e observabilidade/CI-CD — ver escopo completo do projeto.

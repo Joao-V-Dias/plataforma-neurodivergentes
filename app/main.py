@@ -7,12 +7,17 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.middleware import SlowAPIMiddleware
 
+from app.api.v1.auth import router as auth_router
 from app.api.v1.health import router as health_router
+from app.api.v1.usuarios import router as usuarios_router
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import RequestIDMiddleware
+from app.core.rate_limit import limiter
+from app.core.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
 configure_logging()
@@ -35,9 +40,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+
 # Request-id primeiro para que todo log subsequente (inclusive de outros
 # middlewares) ja carregue o id de correlacao.
 app.add_middleware(RequestIDMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,3 +59,5 @@ app.add_middleware(
 register_exception_handlers(app)
 
 app.include_router(health_router, prefix=settings.api_v1_prefix)
+app.include_router(auth_router, prefix=settings.api_v1_prefix)
+app.include_router(usuarios_router, prefix=settings.api_v1_prefix)

@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
 
     # --- Banco de dados ---
-    database_url: str = Field(..., description="URL assincrona do PostgreSQL (postgresql+asyncpg://...)")
+    database_url: str = Field(
+        ..., description="URL assincrona do PostgreSQL (postgresql+asyncpg://...)"
+    )
 
     # --- Redis ---
     redis_url: str = "redis://localhost:6379/0"
@@ -36,6 +38,19 @@ class Settings(BaseSettings):
     # --- Logging ---
     log_level: str = "INFO"
     log_json: bool = True
+
+    # --- Autenticacao / JWT ---
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
+    password_reset_token_expire_minutes: int = 30
+
+    # --- Rate limiting (protecao contra brute-force) ---
+    rate_limit_login: str = "5/minute"
+    rate_limit_forgot_password: str = "3/minute"
+
+    # --- LGPD ---
+    lgpd_politica_versao: str = "1.0"
 
     @property
     def cors_origins_list(self) -> list[str]:
@@ -51,4 +66,4 @@ def get_settings() -> Settings:
     """Settings sao cacheadas (singleton) para evitar reler o .env a cada
     chamada; em testes, sobrescreva via variaveis de ambiente antes do
     primeiro uso ou limpe o cache com get_settings.cache_clear()."""
-    return Settings()  # type: ignore[call-arg]
+    return Settings()

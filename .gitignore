@@ -24,4 +24,7 @@ Thumbs.db
 # Docker
 *.log
 
+# Redis local (snapshot de persistencia gerado pelo redis-server)
+dump.rdb
+
 # Alembic (mantemos as migrations, ignoramos apenas artefatos locais)

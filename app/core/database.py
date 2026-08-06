@@ -28,8 +28,15 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Unit of work por requisicao: commit automatico se o endpoint concluir
+    sem excecao, rollback automatico caso contrario. Endpoints/services nunca
+    precisam chamar commit() explicitamente."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()

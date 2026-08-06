@@ -9,14 +9,13 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# Importa todos os modulos de modelos para que fiquem registrados em
+# Base.metadata antes do autogenerate rodar. Novos modelos (Parte 3+) devem
+# ser importados em app/models/__init__.py tambem.
+import app.models  # noqa: F401
 from alembic import context
 from app.core.config import get_settings
 from app.models.base import Base
-
-# Importa todos os modulos de modelos para que fiquem registrados em
-# Base.metadata antes do autogenerate rodar. Novos modelos (Parte 3+) devem
-# ser importados aqui tambem.
-# from app.models import usuario, instituicao  # noqa: E402  (exemplo futuro)
 
 config = context.config
 
