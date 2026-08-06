@@ -49,3 +49,16 @@ class TagInvalidaError(Exception):
 
 class LinguagemNaoSuportadaError(Exception):
     """Linguagem de programacao sem executor no sandbox (Parte 5)."""
+
+
+class MotorIaIndisponivelError(Exception):
+    """GROQ_API_KEY nao configurada - motor de dicas desligado (Parte 6)."""
+
+
+class GeracaoDicaFalhouError(Exception):
+    """Chamada ao provedor de IA falhou (rede, timeout, erro da API)."""
+
+
+class NivelMaximoDeDicasAtingidoError(Exception):
+    """Aluno ja recebeu a dica de nivel mais alto (solucao comentada) para
+    este problema - nao ha proximo nivel a gerar."""

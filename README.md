@@ -21,7 +21,7 @@ app/
   services/     # Regras de negócio
   repositories/ # Acesso a dados (queries)
   sandbox/      # Executor de código sandboxado via Docker (Parte 5)
-  ai/           # Integração com LLM (Parte 6)
+  ai/           # Motor de IA adaptativa - integração com Groq (Parte 6)
   tests/        # Testes pytest
 alembic/        # Migrations de banco de dados
 scripts/        # Scripts auxiliares de setup local (Postgres/Redis)
@@ -36,6 +36,10 @@ scripts/        # Scripts auxiliares de setup local (Postgres/Redis)
   execução de código da Parte 5 (`docker run --rm --network none ...`),
   não para hospedar a API. Sem o daemon do Docker ativo, submissões
   falham com status `erro_interno`.
+- (Opcional) Uma chave da API da [Groq](https://console.groq.com/keys) em
+  `GROQ_API_KEY` — sem ela o motor de dicas da Parte 6 responde
+  `503 Service Unavailable` de forma controlada; o resto da API funciona
+  normalmente.
 
 ## Setup local (sem Docker)
 
@@ -252,6 +256,66 @@ Rotas: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
 - Histórico: `GET /problemas/{id}/minhas-submissoes` (Aluno, só as
   próprias) e `GET /problemas/{id}/submissoes` (Professor+, todas).
 
+## Motor de IA adaptativa (Parte 6)
+
+> **Nota sobre o provedor:** o escopo original previa a API da Anthropic;
+> por decisão explícita do time neste projeto, o provedor usado é a
+> **[Groq](https://groq.com)** (SDK oficial `groq`, modelo
+> `llama-3.3-70b-versatile` por padrão). A arquitetura (isolamento em
+> `app/ai`, nunca exposta ao frontend; progressão de nível; guardrails;
+> registro de eficácia) é a mesma independente do provedor.
+
+- **Isolamento** (`app/ai/`): nenhum router chama o provedor de IA
+  diretamente — só `app/services/dica_service.py` o faz. `app/ai/groq_client.py`
+  é a única porta de saída para a rede (SDK `AsyncGroq`); `app/ai/prompts.py`
+  é puro (sem I/O) e monta o *system prompt* a partir do nível da dica e do
+  perfil do aluno.
+- **Dicas progressivas** (`POST /problemas/{id}/dicas`): 4 níveis —
+  1) pergunta socrática, 2) pista conceitual, 3) pseudocódigo,
+  4) solução comentada. **O aluno nunca escolhe o nível**: o endpoint não
+  aceita esse parâmetro, o servidor sempre calcula
+  `nível_máximo_já_dado_ao_aluno_neste_problema + 1`. Isso torna o
+  guardrail "nunca pular etapa" estrutural (não depende só de instrução
+  no prompt) — pedir uma 5ª dica devolve `409 Conflict`.
+- **Guardrails no system prompt** (`app/ai/prompts.py:_GUARDRAILS`),
+  presentes em **toda** chamada, independente do perfil do aluno: (1) só
+  entrega solução completa no nível 4, mesmo se o aluno pedir a resposta
+  direta antes disso; (2) a IA nunca emite diagnóstico, avaliação clínica
+  ou qualquer afirmação sobre a condição de saúde do aluno — adapta só a
+  *comunicação*, nunca substitui avaliação profissional (ver
+  `docs/lgpd.md`).
+- **Prompt engineering condicionado a perfil**: condições de
+  neurodivergência (`PerfilAluno`, Parte 3) e traços Big Five
+  (`PerfilBigFive`, Parte 3) mudam o tom/estrutura da dica — ex: TDAH →
+  frases curtas em passos numerados + reforço positivo; TEA → linguagem
+  literal, sem metáfora, estrutura previsível; Dislexia → texto
+  simplificado; Discalculia → reforço lógico/posicional em vez de
+  numérico; Neuroticismo alto → tom tranquilizador, sem pressão de tempo;
+  Conscienciosidade baixa → dica quebrada em microtarefas. Cada dica
+  grava em `adaptacoes_aplicadas` **os códigos** das adaptações usadas
+  (nunca a condição do aluno de novo) — um log auditável de *por que* o
+  tom mudou, visível só a Professor+ (`GET /problemas/{id}/dicas/{aluno_id}`).
+- **Eficácia** (`app/models/dica.py`): quando uma submissão é **aceita**
+  para o mesmo problema, `app/services/submissao_service.py` aciona
+  `dica_service.registrar_resultado_pos_dica`, que marca toda dica ainda
+  sem resultado como `resolvida_apos=true` e calcula
+  `tempo_ate_resolver_ms` — o dado usado para calibrar o sistema ao longo
+  do tempo. Exposto só a Professor+, nunca ao próprio aluno (não
+  queremos pressioná-lo com métrica de desempenho durante o aprendizado).
+- Sem `GROQ_API_KEY` configurada, `POST /problemas/{id}/dicas` devolve
+  `503 Service Unavailable` de forma controlada (nunca vaza o erro bruto
+  do SDK) — verificado manualmente com o servidor rodando.
+- Critério de aceite validado em `app/tests/test_dicas.py`: dois alunos
+  com perfis diferentes recebendo o mesmo problema recebem dicas com
+  conteúdo visivelmente distinto (`test_dois_alunos_perfis_diferentes_recebem_dicas_com_tom_distinto`),
+  e o histórico visível a Professor+ demonstra a progressão de nível e a
+  adaptação aplicada por aluno. `app/tests/test_ai_prompts.py` testa a
+  engenharia de prompt em isolamento (pura, determinística, sem mock).
+  Nos testes de integração, o provedor de IA é sempre mockado — chamar a
+  API real custaria dinheiro e seria não-determinístico; o que se
+  valida ali é a orquestração, não a qualidade do texto de um modelo de
+  terceiros.
+
 ## Testes e lint
 
 ```powershell
@@ -266,7 +330,9 @@ Redis antes de cada teste para evitar que testes se atrapalhem entre si.
 Os testes de `app/tests/test_problemas.py` executam containers Docker de
 verdade (Parte 5) — mais lentos que o resto da suíte (~20s), mas é o único
 jeito honesto de validar isolamento/timeout real. Exigem o Docker Desktop
-rodando.
+rodando. Os testes de `app/tests/test_dicas.py` (Parte 6) mockam o
+provedor de IA (nunca chamam a Groq de verdade); `app/tests/test_ai_prompts.py`
+testa a montagem de prompt sem nenhum mock, banco ou rede.
 
 ## Logging
 
@@ -292,7 +358,5 @@ Toda resposta de erro da API segue o mesmo formato:
 
 ## Próximas partes
 
-Motor de IA adaptativa (Parte 6, que vai usar as tags de tipo de
-raciocínio dos problemas e o perfil de neurodivergência/Big Five para
-calibrar as dicas), frontend acessível e observabilidade/CI-CD — ver
-escopo completo do projeto.
+Frontend acessível e observabilidade/CI-CD — ver escopo completo do
+projeto.

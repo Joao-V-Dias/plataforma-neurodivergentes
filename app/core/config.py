@@ -60,6 +60,16 @@ class Settings(BaseSettings):
     sandbox_pids_limit: int = 64
     sandbox_max_casos_por_submissao: int = 20
 
+    # --- Motor de IA adaptativa / Groq (Parte 6) ---
+    # Isolado em app/ai - nunca exposto direto ao frontend (ver app/ai/__init__.py).
+    groq_api_key: str = Field(
+        default="", description="Chave da API Groq; vazia desabilita o motor de IA"
+    )
+    groq_modelo: str = "llama-3.3-70b-versatile"
+    groq_timeout_segundos: float = 20.0
+    groq_max_tokens_resposta: int = 700
+    dica_niveis_maximo: int = 4
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

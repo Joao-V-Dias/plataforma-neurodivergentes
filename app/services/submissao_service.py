@@ -15,7 +15,7 @@ from app.models.submissao import StatusSubmissao, Submissao, SubmissaoResultado
 from app.models.usuario import Usuario
 from app.repositories import problema_repository, submissao_repository
 from app.sandbox.executor import StatusExecucao, executar
-from app.services import audit
+from app.services import audit, dica_service
 
 # Prioridade de agravamento: a submissao herda o pior status dentre todos
 # os casos de teste (ex: um caso com erro_interno "contamina" a submissao
@@ -103,6 +103,17 @@ async def submeter(
         detalhes={"problema_id": str(problema.id), "status": status_geral.value},
         ip_address=ip_address,
     )
+
+    if status_geral == StatusSubmissao.ACEITO:
+        # Fecha o loop de eficacia das dicas (Parte 6): se o aluno tinha
+        # dicas pendentes de resultado para este problema, esta submissao
+        # aceita e o "resolveu depois da dica? em quanto tempo?".
+        await dica_service.registrar_resultado_pos_dica(
+            db,
+            problema_id=problema.id,
+            aluno_id=aluno.id,
+            submissao_criado_em=submissao.criado_em,
+        )
 
     return SubmissaoDetalhada(
         submissao=submissao, resultados=resultados, casos_por_id={c.id: c for c in casos}

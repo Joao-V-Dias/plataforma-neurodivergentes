@@ -1,6 +1,7 @@
 from app.models.audit_log import AuditLog
 from app.models.base import Base
 from app.models.condicao_neurodivergencia import CondicaoNeurodivergencia
+from app.models.dica import Dica
 from app.models.instituicao import Instituicao
 from app.models.matricula import Matricula
 from app.models.password_reset_token import PasswordResetToken
@@ -18,6 +19,7 @@ __all__ = [
     "Base",
     "CasoTeste",
     "CondicaoNeurodivergencia",
+    "Dica",
     "Instituicao",
     "Matricula",
     "Papel",
