@@ -12,12 +12,14 @@ from app.api.deps import (
     get_client_ip,
     get_current_user,
     get_problema_acessivel,
+    get_turma_acessivel_para_membro,
     require_min_role,
     require_roles,
 )
 from app.core.database import get_db
 from app.models.problema import CategoriaTag, Problema
 from app.models.submissao import Submissao
+from app.models.turma import Turma
 from app.models.usuario import Papel, Usuario
 from app.repositories import (
     problema_repository,
@@ -156,6 +158,22 @@ async def listar_problemas(
     usuario: Usuario = Depends(require_min_role(Papel.PROFESSOR)),
 ) -> list[ProblemaResponse]:
     problemas = await problema_service.listar_problemas_instituicao(db, usuario.instituicao_id)
+    respostas = []
+    for p in problemas:
+        detalhe = await problema_service.obter_detalhe(db, p)
+        respostas.append(_problema_response(detalhe))
+    return respostas
+
+
+@router.get("/turmas/{turma_id}/problemas", response_model=list[ProblemaResponse])
+async def listar_problemas_da_turma(
+    db: AsyncSession = Depends(get_db),
+    turma: Turma = Depends(get_turma_acessivel_para_membro),
+) -> list[ProblemaResponse]:
+    """Complementa GET /problemas (Professor+, instituição inteira): aqui um
+    Aluno matriculado também enxerga os problemas vinculados à sua turma -
+    sem isto ele nao tem como descobrir quais problemas resolver."""
+    problemas = await problema_service.listar_problemas_turma(db, turma.id)
     respostas = []
     for p in problemas:
         detalhe = await problema_service.obter_detalhe(db, p)

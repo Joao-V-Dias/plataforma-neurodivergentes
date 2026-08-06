@@ -319,3 +319,39 @@ async def test_progresso_turma_reflete_submissoes_reais(
     dados = progresso.json()[0]
     assert dados["tentativas"] == 2
     assert dados["problemas_resolvidos"] == 1
+
+
+async def test_aluno_matriculado_lista_problemas_da_propria_turma(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    ctx = await _preparar_turma_com_problema(client, db_session, sufixo="turmaproblemas")
+
+    resp_aluno = await client.get(
+        f"/api/v1/turmas/{ctx['turma'].id}/problemas", headers=_auth(ctx["token_aluno"])
+    )
+    assert resp_aluno.status_code == 200
+    ids = [p["id"] for p in resp_aluno.json()]
+    assert ctx["problema_id"] in ids
+
+    resp_professor = await client.get(
+        f"/api/v1/turmas/{ctx['turma'].id}/problemas", headers=_auth(ctx["token_professor"])
+    )
+    assert resp_professor.status_code == 200
+    assert ctx["problema_id"] in [p["id"] for p in resp_professor.json()]
+
+
+async def test_aluno_nao_matriculado_nao_lista_problemas_da_turma(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    ctx = await _preparar_turma_com_problema(client, db_session, sufixo="turmasemacesso")
+    instituicao_id = ctx["professor"].instituicao_id
+    await criar_usuario(
+        db_session, email="aluno.foraturma@teste.com", papel=Papel.ALUNO,
+        instituicao_id=instituicao_id,
+    )
+    token_outro = await _token(client, "aluno.foraturma@teste.com")
+
+    resp = await client.get(
+        f"/api/v1/turmas/{ctx['turma'].id}/problemas", headers=_auth(token_outro)
+    )
+    assert resp.status_code == 403

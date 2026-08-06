@@ -1,6 +1,7 @@
 # Plataforma de Educação Adaptativa em Programação para Pessoas Neurodivergentes
 
-Backend em Python 3.12+ / FastAPI / PostgreSQL / SQLAlchemy 2.0 (async) / Pydantic v2.
+Backend em Python 3.12+ / FastAPI / PostgreSQL / SQLAlchemy 2.0 (async) / Pydantic v2,
+com frontend em React 19 / TypeScript / Vite (`frontend/`, Parte 7).
 
 > **Nota sobre este setup:** por decisão do time, a API, o PostgreSQL e o
 > Redis rodam **sem Docker** — instalados e executados diretamente na
@@ -25,6 +26,7 @@ app/
   tests/        # Testes pytest
 alembic/        # Migrations de banco de dados
 scripts/        # Scripts auxiliares de setup local (Postgres/Redis)
+frontend/       # SPA React + TypeScript (Parte 7) - ver secao dedicada abaixo
 ```
 
 ## Pré-requisitos
@@ -244,6 +246,11 @@ Rotas: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
 - **Vínculo a turma** (`POST /problemas/{id}/turmas`): um problema só fica
   acessível a um aluno depois de vinculado a uma turma em que ele tem
   matrícula ativa (`app/api/deps.py:get_problema_acessivel`).
+- **Descoberta pelo aluno** (`GET /turmas/{id}/problemas`, adicionado na
+  Parte 7): lista os problemas vinculados a uma turma - Aluno matriculado
+  ou Professor+ com acesso à turma (`app/api/deps.py:get_turma_acessivel_para_membro`).
+  Sem este endpoint o aluno não tinha nenhuma forma de descobrir quais
+  problemas resolver a partir do frontend.
 - **Submissão** (`POST /problemas/{id}/submissoes`): roda o código contra
   cada caso de teste, grava um status geral (`aceito`, `reprovado`,
   `erro_execucao`, `tempo_excedido`, `erro_interno` — o pior status entre
@@ -316,11 +323,85 @@ Rotas: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
   valida ali é a orquestração, não a qualidade do texto de um modelo de
   terceiros.
 
+## Frontend (Parte 7)
+
+SPA em `frontend/`: React 19 + TypeScript + Vite, TanStack Query (estado de
+servidor/cache), React Router, React Hook Form + Zod (formulários), Radix
+UI (primitivas acessíveis) + Tailwind CSS v4, CodeMirror 6 (editor de
+código), Vitest + Testing Library.
+
+> **Nota sobre o escopo:** o texto original da Parte 7 (frontend
+> completo, meta de Lighthouse Accessibility Score > 90) não estava mais
+> disponível nesta sessão além do fragmento de acessibilidade — a
+> implementação seguiu diretamente o backend das Partes 1-6 como fonte de
+> verdade para cada tela e regra de acesso.
+
+- **Setup:**
+  ```powershell
+  cd frontend
+  npm install
+  copy .env.example .env      # ajuste VITE_API_BASE_URL se necessário
+  npm run dev                 # http://localhost:5173
+  ```
+  O backend precisa estar rodando em paralelo (`.venv\Scripts\python.exe -m uvicorn app.main:app --reload`) - `CORS_ORIGINS` no `.env` do backend já inclui `http://localhost:5173`.
+- **Cliente de API tipado** (`src/lib/api/`): tipos TypeScript espelhando
+  1:1 os schemas Pydantic do backend, um axios `apiClient` com interceptor
+  de refresh token (rotação automática, deduplicando chamadas concorrentes
+  de `/auth/refresh`), e um módulo por recurso (auth/usuarios/perfis/turmas/problemas/dicas).
+- **Autenticação e RBAC** (`src/lib/auth/`): `AuthProvider` guarda a
+  sessão; `ProtectedRoute` bloqueia rotas por autenticação e por papel
+  mínimo (`papelMinimo`, espelhando `app/api/deps.py:require_min_role`);
+  `RoleGate` esconde elementos de UI por papel — sempre como reforço de
+  UX, nunca como a autorização real (essa é sempre revalidada pelo
+  backend).
+- **Acessibilidade aplicada globalmente** (`src/lib/accessibility/`): lê
+  `PreferenciasAcessibilidade` (Parte 3) do usuário logado e aplica
+  classes no `<html>` — alto contraste, tamanho de fonte, fonte legível
+  (mais espaçamento entre letras/linhas, ajuda leitura com dislexia),
+  redução de estímulos (desliga toda animação/transição) e um botão
+  "ouvir" (Web Speech API) em enunciados de problema e no conteúdo das
+  dicas quando "leitura em voz alta" está ativada. Testado manualmente no
+  Chrome: alternar alto contraste + fonte grande re-tema a aplicação
+  inteira instantaneamente (otimista, antes da confirmação da API).
+- **Telas:** login/cadastro (auto-registro de aluno, conta nasce
+  inativa)/recuperação de senha; dashboard por papel; usuários
+  (hierarquia RBAC de criação + aprovação de aluno pendente); perfil
+  (identificação de neurodivergência + questionário Big Five/TIPI, com
+  linguagem cuidadosa de LGPD — nunca fala em diagnóstico); turmas
+  (gestão para Professor+, progresso pessoal para Aluno); banco de
+  problemas (CRUD com casos de teste públicos/ocultos para Professor+;
+  editor de código CodeMirror + submissão + resultado por caso para
+  Aluno — nunca expõe detalhe de caso oculto, o backend já filtra isso);
+  dicas progressivas (Parte 6) embutidas na tela do problema — o nível
+  não é escolhido pelo cliente, só "pedir a próxima dica".
+- **Endpoint novo no backend** (`GET /turmas/{id}/problemas`): ao montar
+  a tela do aluno percebemos que não havia nenhuma forma de descobrir
+  quais problemas foram atribuídos à turma dele — só existia
+  `GET /problemas`, restrito a Professor+. Endpoint aditivo, sem alterar
+  nenhum contrato existente; coberto por testes em `app/tests/test_problemas.py`
+  (aluno matriculado lista, aluno de fora recebe 403).
+- **Testes** (`npm run test`, Vitest + Testing Library): fluxo de login
+  (validação, sucesso, erro do backend), `ProtectedRoute`/`RoleGate`
+  (redirecionamento por autenticação e por papel), extração de mensagem
+  de erro do envelope único da API, regras hierárquicas de RBAC
+  (`papeisCriaveisPor`/`papelAtendeMinimo`).
+- **Build de produção:** `npm run build` (`tsc -b && vite build`) —
+  code-splitting por rota via `React.lazy`, então o chunk inicial (tela de
+  login) não carrega CodeMirror nem as telas de gestão.
+
 ## Testes e lint
 
 ```powershell
 .venv\Scripts\python.exe -m pytest
 .venv\Scripts\python.exe -m ruff check app alembic scripts
+```
+
+Frontend (dentro de `frontend/`):
+
+```powershell
+npm run lint    # eslint, incluindo jsx-a11y
+npm run test    # vitest
+npm run build   # tsc --noEmit + vite build
 ```
 
 Os testes escrevem no banco Postgres local de verdade, mas cada teste roda
@@ -358,5 +439,5 @@ Toda resposta de erro da API segue o mesmo formato:
 
 ## Próximas partes
 
-Frontend acessível e observabilidade/CI-CD — ver escopo completo do
-projeto.
+Observabilidade, testes de segurança, CI/CD e documentação (Parte 8) —
+ver escopo completo do projeto.

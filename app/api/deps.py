@@ -14,7 +14,12 @@ from app.core.security import TokenExpiredError, TokenInvalidError, TokenType, d
 from app.models.problema import Problema
 from app.models.turma import Turma
 from app.models.usuario import Papel, Usuario
-from app.repositories import problema_repository, turma_repository, usuario_repository
+from app.repositories import (
+    matricula_repository,
+    problema_repository,
+    turma_repository,
+    usuario_repository,
+)
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -112,6 +117,36 @@ async def get_turma_acessivel(
     turma = await turma_repository.get_by_id(db, turma_id)
     if turma is None or turma.instituicao_id != usuario.instituicao_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma nao encontrada.")
+
+    if usuario.papel == Papel.PROFESSOR and not await turma_repository.professor_vinculado(
+        db, turma_id, usuario.id
+    ):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Voce nao tem acesso a esta turma.")
+
+    return turma
+
+
+async def get_turma_acessivel_para_membro(
+    turma_id: uuid.UUID,
+    usuario: Usuario = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Turma:
+    """Como get_turma_acessivel, mas tambem libera o Aluno matriculado
+    ativamente na turma (leitura apenas) - usado por rotas onde o Aluno
+    precisa enxergar algo escopado a turma sem ganhar acesso de gestao
+    (ex: GET /turmas/{id}/problemas, para descobrir quais problemas foram
+    vinculados a sua turma)."""
+    turma = await turma_repository.get_by_id(db, turma_id)
+    if turma is None or turma.instituicao_id != usuario.instituicao_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma nao encontrada.")
+
+    if usuario.papel == Papel.ALUNO:
+        matricula = await matricula_repository.get_ativa(
+            db, turma_id=turma_id, aluno_id=usuario.id
+        )
+        if matricula is None:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Voce nao tem acesso a esta turma.")
+        return turma
 
     if usuario.papel == Papel.PROFESSOR and not await turma_repository.professor_vinculado(
         db, turma_id, usuario.id

@@ -127,3 +127,10 @@ async def listar_problemas_instituicao(
     db: AsyncSession, instituicao_id: uuid.UUID
 ) -> Sequence[Problema]:
     return await problema_repository.list_por_instituicao(db, instituicao_id)
+
+
+async def listar_problemas_turma(db: AsyncSession, turma_id: uuid.UUID) -> Sequence[Problema]:
+    """Problemas vinculados a uma turma - usado pelo Aluno para descobrir
+    o que foi atribuido a ele (ver app/api/deps.py:get_turma_acessivel_para_membro),
+    e por Professor+ para revisar o que ja foi vinculado."""
+    return await problema_repository.list_por_turma(db, turma_id)
