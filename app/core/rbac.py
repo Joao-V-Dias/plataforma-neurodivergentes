@@ -18,3 +18,11 @@ NIVEL_HIERARQUIA: dict[Papel, int] = {
 def papeis_a_partir_de(papel_minimo: Papel) -> tuple[Papel, ...]:
     nivel_minimo = NIVEL_HIERARQUIA[papel_minimo]
     return tuple(papel for papel, nivel in NIVEL_HIERARQUIA.items() if nivel >= nivel_minimo)
+
+
+def pode_criar(criador: Papel, alvo: Papel) -> bool:
+    """Um papel so pode criar contas de papeis estritamente abaixo dele na
+    hierarquia (Diretor cria Coordenador/Professor/Aluno; Coordenador cria
+    Professor/Aluno; Professor cria Aluno; Aluno nao cria ninguem - so se
+    auto-cadastra, ja coberto por POST /auth/register)."""
+    return NIVEL_HIERARQUIA[alvo] < NIVEL_HIERARQUIA[criador]

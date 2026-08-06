@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models.usuario import Papel
-from app.tests.conftest import criar_usuario
+from app.tests.conftest import criar_instituicao, criar_usuario
 
 
 def _token_expirado(usuario_id: uuid.UUID, papel: Papel) -> str:
@@ -173,23 +173,42 @@ async def test_logout_revoga_refresh_token(client: AsyncClient, db_session: Asyn
     assert resp.status_code == 401
 
 
-async def test_registro_aluno_exige_consentimento_lgpd(client: AsyncClient) -> None:
+async def test_registro_aluno_exige_consentimento_lgpd(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    instituicao = await criar_instituicao(db_session)
     resp = await client.post(
         "/api/v1/auth/register",
         json={
             "nome": "Sem Consentimento",
             "email": "semconsentimento@teste.com",
             "senha": "SenhaValida123",
+            "instituicao_codigo": instituicao.codigo,
             "aceite_lgpd": False,
         },
     )
     assert resp.status_code == 400
 
 
+async def test_registro_aluno_codigo_instituicao_invalido(client: AsyncClient) -> None:
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "nome": "Codigo Invalido",
+            "email": "codigoinvalido@teste.com",
+            "senha": "SenhaValida123",
+            "instituicao_codigo": "NAO-EXISTE",
+            "aceite_lgpd": True,
+        },
+    )
+    assert resp.status_code == 404
+
+
 async def test_registro_aluno_email_duplicado(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    await criar_usuario(db_session, email="duplicado@teste.com")
+    instituicao = await criar_instituicao(db_session)
+    await criar_usuario(db_session, email="duplicado@teste.com", instituicao_id=instituicao.id)
 
     resp = await client.post(
         "/api/v1/auth/register",
@@ -197,6 +216,7 @@ async def test_registro_aluno_email_duplicado(
             "nome": "Duplicado",
             "email": "duplicado@teste.com",
             "senha": "SenhaValida123",
+            "instituicao_codigo": instituicao.codigo,
             "aceite_lgpd": True,
         },
     )

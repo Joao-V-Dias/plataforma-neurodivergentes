@@ -25,13 +25,19 @@ from app.core.security import (
     verify_password,
 )
 from app.models.usuario import Papel, Usuario
-from app.repositories import password_reset_repository, refresh_token_repository, usuario_repository
+from app.repositories import (
+    instituicao_repository,
+    password_reset_repository,
+    refresh_token_repository,
+    usuario_repository,
+)
 from app.services import audit
 from app.services.exceptions import (
     ConsentimentoNaoAceitoError,
     ContaInativaError,
     CredenciaisInvalidasError,
     EmailJaCadastradoError,
+    RecursoNaoEncontradoError,
 )
 
 logger = get_logger(__name__)
@@ -53,12 +59,17 @@ async def registrar_aluno(
     email: str,
     senha: str,
     aceite_lgpd: bool,
+    instituicao_codigo: str,
     ip_address: str | None = None,
 ) -> Usuario:
     if not aceite_lgpd:
         raise ConsentimentoNaoAceitoError(
             "E necessario aceitar explicitamente a politica de tratamento de dados."
         )
+
+    instituicao = await instituicao_repository.get_by_codigo(db, instituicao_codigo)
+    if instituicao is None:
+        raise RecursoNaoEncontradoError("Codigo de instituicao invalido.")
 
     if await usuario_repository.get_by_email(db, email) is not None:
         raise EmailJaCadastradoError("Ja existe uma conta cadastrada com este e-mail.")
@@ -70,7 +81,8 @@ async def registrar_aluno(
         email=email,
         senha_hash=hash_password(senha),
         papel=Papel.ALUNO,
-        is_active=False,  # aguarda aprovacao (fluxo completo na Parte 3/4)
+        instituicao_id=instituicao.id,
+        is_active=False,  # aguarda aprovacao (POST /usuarios/{id}/aprovar, Parte 3)
         consentimento_lgpd_aceito_em=datetime.now(UTC),
         consentimento_lgpd_versao=settings.lgpd_politica_versao,
     )

@@ -1,5 +1,5 @@
 """Excecoes de regra de negocio da camada de servico. Cada uma e mapeada
-para um status HTTP especifico no router (app/api/v1/auth.py)."""
+para um status HTTP especifico nos routers (app/api/v1/*.py)."""
 
 
 class EmailJaCadastradoError(Exception):
@@ -16,3 +16,24 @@ class ContaInativaError(Exception):
 
 class ConsentimentoNaoAceitoError(Exception):
     pass
+
+
+class HierarquiaInvalidaError(Exception):
+    """Papel criador nao tem permissao para criar contas do papel alvo."""
+
+
+class RecursoNaoEncontradoError(Exception):
+    pass
+
+
+class InstituicaoDiferenteError(Exception):
+    """Acao envolvendo dois usuarios de instituicoes diferentes (multi-tenant)."""
+
+
+class AlvoInvalidoError(Exception):
+    """Acao aplicada a um usuario de papel incompativel (ex: perfil de
+    aluno registrado para um usuario que nao e Aluno)."""
+
+
+class CondicaoInvalidaError(Exception):
+    """Codigo de condicao de neurodivergencia nao existe/nao esta ativo."""

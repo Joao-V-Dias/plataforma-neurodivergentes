@@ -6,6 +6,7 @@ SQLAlchemy 2.0 para suites de teste). Isso permite escrever no banco real
 em cada teste sem precisar limpar tabelas manualmente ou usar um banco
 separado."""
 
+import uuid
 from collections.abc import AsyncGenerator
 
 import pytest_asyncio
@@ -17,6 +18,7 @@ from app.core.config import get_settings
 from app.core.database import engine, get_db
 from app.core.security import hash_password
 from app.main import app
+from app.models.instituicao import Instituicao
 from app.models.usuario import Papel, Usuario
 from app.repositories import usuario_repository
 
@@ -64,6 +66,18 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides.clear()
 
 
+async def criar_instituicao(
+    db: AsyncSession, *, nome: str = "Instituicao de Teste", codigo: str | None = None
+) -> Instituicao:
+    instituicao = Instituicao(
+        nome=nome, codigo=codigo or f"TESTE{uuid.uuid4().hex[:8].upper()}", ativo=True
+    )
+    db.add(instituicao)
+    await db.flush()
+    await db.refresh(instituicao)
+    return instituicao
+
+
 async def criar_usuario(
     db: AsyncSession,
     *,
@@ -72,12 +86,17 @@ async def criar_usuario(
     papel: Papel = Papel.ALUNO,
     is_active: bool = True,
     nome: str = "Usuario de Teste",
+    instituicao_id: uuid.UUID | None = None,
 ) -> Usuario:
+    if instituicao_id is None:
+        instituicao_id = (await criar_instituicao(db)).id
+
     return await usuario_repository.create(
         db,
         nome=nome,
         email=email,
         senha_hash=hash_password(senha),
         papel=papel,
+        instituicao_id=instituicao_id,
         is_active=is_active,
     )

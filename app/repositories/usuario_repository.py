@@ -25,8 +25,19 @@ async def list_all(db: AsyncSession) -> Sequence[Usuario]:
     return result.scalars().all()
 
 
-async def existe_algum_diretor(db: AsyncSession) -> bool:
-    result = await db.execute(select(Usuario.id).where(Usuario.papel == Papel.DIRETOR).limit(1))
+async def list_por_instituicao(db: AsyncSession, instituicao_id: uuid.UUID) -> Sequence[Usuario]:
+    result = await db.execute(
+        select(Usuario).where(Usuario.instituicao_id == instituicao_id).order_by(Usuario.nome)
+    )
+    return result.scalars().all()
+
+
+async def existe_algum_diretor(db: AsyncSession, instituicao_id: uuid.UUID) -> bool:
+    result = await db.execute(
+        select(Usuario.id)
+        .where(Usuario.papel == Papel.DIRETOR, Usuario.instituicao_id == instituicao_id)
+        .limit(1)
+    )
     return result.scalar_one_or_none() is not None
 
 
@@ -37,6 +48,7 @@ async def create(
     email: str,
     senha_hash: str,
     papel: Papel,
+    instituicao_id: uuid.UUID,
     is_active: bool,
     consentimento_lgpd_aceito_em: datetime | None = None,
     consentimento_lgpd_versao: str | None = None,
@@ -46,6 +58,7 @@ async def create(
         email=email.lower(),
         senha_hash=senha_hash,
         papel=papel,
+        instituicao_id=instituicao_id,
         is_active=is_active,
         consentimento_lgpd_aceito_em=consentimento_lgpd_aceito_em,
         consentimento_lgpd_versao=consentimento_lgpd_versao,
@@ -58,5 +71,11 @@ async def create(
 
 async def atualizar_senha(db: AsyncSession, usuario: Usuario, senha_hash: str) -> None:
     usuario.senha_hash = senha_hash
+    db.add(usuario)
+    await db.flush()
+
+
+async def ativar(db: AsyncSession, usuario: Usuario) -> None:
+    usuario.is_active = True
     db.add(usuario)
     await db.flush()

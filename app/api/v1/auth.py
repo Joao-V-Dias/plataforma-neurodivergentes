@@ -27,6 +27,7 @@ from app.services.exceptions import (
     ContaInativaError,
     CredenciaisInvalidasError,
     EmailJaCadastradoError,
+    RecursoNaoEncontradoError,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -48,7 +49,7 @@ async def registrar(
     db: AsyncSession = Depends(get_db),
 ) -> Usuario:
     """Auto-cadastro de aluno. A conta nasce inativa, aguardando aprovacao
-    (fluxo de aprovacao completo chega na Parte 3/4)."""
+    de um Professor+ da mesma instituicao (POST /usuarios/{id}/aprovar)."""
     try:
         return await auth_service.registrar_aluno(
             db,
@@ -56,12 +57,15 @@ async def registrar(
             email=payload.email,
             senha=payload.senha,
             aceite_lgpd=payload.aceite_lgpd,
+            instituicao_codigo=payload.instituicao_codigo,
             ip_address=get_client_ip(request),
         )
     except EmailJaCadastradoError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     except ConsentimentoNaoAceitoError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    except RecursoNaoEncontradoError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
 
 
 @router.post("/login", response_model=TokenResponse)

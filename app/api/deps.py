@@ -1,6 +1,7 @@
 """Dependencias FastAPI reutilizaveis pelos routers: extracao/validacao do
 usuario autenticado a partir do JWT (Bearer) e checagem de RBAC."""
 
+import uuid
 from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, Request, status
@@ -70,3 +71,29 @@ def require_roles(*papeis_permitidos: Papel) -> Callable[[Usuario], Usuario]:
 
 def require_min_role(papel_minimo: Papel) -> Callable[[Usuario], Usuario]:
     return require_roles(*papeis_a_partir_de(papel_minimo))
+
+
+async def get_aluno_acessivel(
+    aluno_id: uuid.UUID,
+    usuario: Usuario = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Usuario:
+    """Resolve o aluno-alvo de rotas como /alunos/{aluno_id}/perfil,
+    liberando acesso apenas ao proprio aluno ou a um Professor+ da mesma
+    instituicao - a regra de visibilidade de dado sensivel descrita em
+    docs/lgpd.md (secao 7)."""
+    aluno = await usuario_repository.get_by_id(db, aluno_id)
+    if aluno is None or aluno.papel != Papel.ALUNO:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno nao encontrado.")
+
+    e_o_proprio = usuario.id == aluno.id
+    e_staff_da_instituicao = (
+        usuario.papel in papeis_a_partir_de(Papel.PROFESSOR)
+        and usuario.instituicao_id == aluno.instituicao_id
+    )
+    if not (e_o_proprio or e_staff_da_instituicao):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Voce nao tem permissao para acessar o perfil deste aluno.",
+        )
+    return aluno

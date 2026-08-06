@@ -11,6 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.health import router as health_router
+from app.api.v1.perfis import router as perfis_router
 from app.api.v1.usuarios import router as usuarios_router
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
@@ -61,3 +62,4 @@ register_exception_handlers(app)
 app.include_router(health_router, prefix=settings.api_v1_prefix)
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(usuarios_router, prefix=settings.api_v1_prefix)
+app.include_router(perfis_router, prefix=settings.api_v1_prefix)

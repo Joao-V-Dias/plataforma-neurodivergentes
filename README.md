@@ -94,14 +94,20 @@ python -c "import secrets; print(secrets.token_urlsafe(64))"
 .venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-### 6. Primeiro usuário (Diretor)
+### 6. Primeira instituição e primeiro usuário (Diretor)
 
-Não existe endpoint público para criar um Diretor (de propósito — é uma
-ação administrativa rara e sensível). Rode o script de bootstrap:
+Não existe endpoint público para criar uma instituição ou um Diretor (de
+propósito — são ações administrativas raras e sensíveis). Rode o script
+de bootstrap:
 
 ```powershell
-.venv\Scripts\python.exe scripts\seed_diretor.py --nome "Seu Nome" --email diretor@escola.com --senha "SenhaForte123"
+.venv\Scripts\python.exe scripts\seed_diretor.py `
+  --instituicao-nome "Sua Escola" --instituicao-codigo ESCOLA01 `
+  --nome "Seu Nome" --email diretor@escola.com --senha "SenhaForte123"
 ```
+
+O `--instituicao-codigo` é o código que alunos usam para se auto-cadastrar
+em `POST /auth/register` (`instituicao_codigo` no corpo da requisição).
 
 ### 7. Subir a API
 
@@ -125,7 +131,7 @@ ação administrativa rara e sensível). Rode o script de bootstrap:
 - Rate limiting (Redis) em `/auth/login` (padrão `5/minute`) e
   `/auth/forgot-password` (`3/minute`) contra brute-force.
 - Auto-cadastro de aluno (`POST /auth/register`) nasce **inativo**,
-  aguardando aprovação (fluxo completo de aprovação vem na Parte 3/4).
+  aguardando aprovação (`POST /usuarios/{id}/aprovar`, Parte 3).
 - Recuperação de senha: token de uso único, expira em 30 min, resposta
   idêntica para e-mail existente/inexistente (anti-enumeration). Como
   ainda não há serviço de e-mail configurado, o token só volta no corpo
@@ -134,12 +140,43 @@ ação administrativa rara e sensível). Rode o script de bootstrap:
 - Trilha de auditoria de eventos de autenticação em `audit_logs`
   (`app/services/audit.py`).
 - Ver `docs/lgpd.md` para a política de dados sensíveis (neurodivergência,
-  perfil psicológico) que a Parte 3 vai coletar.
+  perfil psicológico).
 
-Rotas principais: `POST /auth/register`, `POST /auth/login`,
-`POST /auth/refresh`, `POST /auth/logout`, `POST /auth/forgot-password`,
-`POST /auth/reset-password`, `GET /auth/me`, `GET /usuarios`
-(Professor+, apenas para comprovar RBAC — CRUD completo vem na Parte 3).
+Rotas: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
+`POST /auth/logout`, `POST /auth/forgot-password`,
+`POST /auth/reset-password`, `GET /auth/me`.
+
+## Modelagem de dados e gestão de usuários (Parte 3)
+
+- **Multi-tenant por instituição**: toda a hierarquia de RBAC é escopada a
+  uma `Instituicao` (`app/models/instituicao.py`). Um Diretor/Coordenador/
+  Professor só vê e administra usuários da própria instituição.
+- **Criação hierárquica de usuários** (`POST /usuarios`): um papel só cria
+  contas de papel **estritamente abaixo** dele na hierarquia — Diretor pode
+  criar Coordenador, Professor ou Aluno diretamente (não precisa passar por
+  Coordenador); Professor só cria Aluno; Aluno não cria ninguém (só se
+  auto-cadastra). Contas criadas por staff já nascem ativas.
+- **Aprovação de auto-cadastro** (`POST /usuarios/{id}/aprovar`, Professor+
+  da mesma instituição): fecha o fluxo "aluno se autocadastra com
+  aprovação" iniciado na Parte 2.
+- **Perfil de neurodivergência** (`PerfilAluno`, dado sensível de saúde -
+  ver `docs/lgpd.md`): multi-select de condições vindas de um vocabulário
+  extensível (`GET /condicoes-neurodivergencia`), versionado de forma
+  append-only (nunca sobrescreve, sempre soma uma versão nova) e exige
+  consentimento específico separado do consentimento geral de cadastro.
+  Rotas: `POST/GET /alunos/{id}/perfil`, `GET /alunos/{id}/perfil/historico`.
+- **Perfil Big Five**: questionário TIPI de 10 itens (instrumento público
+  validado - Gosling, Rentfrow & Swann, 2003), autorrelato exclusivo do
+  aluno. Rotas: `GET /big-five/questionario`, `POST /me/big-five`,
+  `GET /alunos/{id}/big-five`.
+- **Preferências de acessibilidade** (fonte, contraste, tempo extra,
+  leitura em voz alta, redução de estímulos): não é dado clínico, mutável
+  in-place, qualquer usuário tem a sua. Rotas:
+  `GET/PUT /me/preferencias-acessibilidade`.
+- **Regra de visibilidade de dado sensível**: o próprio aluno sempre acessa
+  seu perfil/Big Five; Professor/Coordenador/Diretor da mesma instituição
+  também acessam (`app/api/deps.py:get_aluno_acessivel`). Escopo por turma
+  específica (não a instituição inteira) fica para a Parte 4.
 
 ## Testes e lint
 
@@ -177,6 +214,6 @@ Toda resposta de erro da API segue o mesmo formato:
 
 ## Próximas partes
 
-Modelagem de usuários e perfis de adaptação (neurodivergência, Big Five),
-gestão acadêmica, banco de problemas, motor de IA adaptativa, frontend
-acessível e observabilidade/CI-CD — ver escopo completo do projeto.
+Gestão acadêmica (turmas, matrículas), banco de problemas, motor de IA
+adaptativa, frontend acessível e observabilidade/CI-CD — ver escopo
+completo do projeto.

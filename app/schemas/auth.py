@@ -4,34 +4,27 @@ feita aqui pelo Pydantic antes de qualquer dado chegar na camada de
 servico - uma das protecoes basicas contra input malicioso exigidas pelo
 escopo (OWASP)."""
 
-import re
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.models.usuario import Papel
-
-
-def _validar_forca_senha(senha: str) -> str:
-    if len(senha) < 8:
-        raise ValueError("A senha deve ter pelo menos 8 caracteres.")
-    if not re.search(r"[A-Za-z]", senha):
-        raise ValueError("A senha deve conter pelo menos uma letra.")
-    if not re.search(r"\d", senha):
-        raise ValueError("A senha deve conter pelo menos um numero.")
-    return senha
+from app.schemas.validators import validar_forca_senha
 
 
 class RegistroAlunoRequest(BaseModel):
     nome: str = Field(..., min_length=2, max_length=200)
     email: EmailStr
     senha: str = Field(..., min_length=8, max_length=128)
+    instituicao_codigo: str = Field(
+        ..., min_length=1, max_length=20, description="Codigo da instituicao fornecido pela escola."
+    )
     aceite_lgpd: bool = Field(
         ..., description="Consentimento explicito com a politica de tratamento de dados."
     )
 
-    _validar_senha = field_validator("senha")(_validar_forca_senha)
+    _validar_senha = field_validator("senha")(validar_forca_senha)
 
 
 class LoginRequest(BaseModel):
@@ -63,7 +56,7 @@ class ResetPasswordRequest(BaseModel):
     token: str
     nova_senha: str = Field(..., min_length=8, max_length=128)
 
-    _validar_senha = field_validator("nova_senha")(_validar_forca_senha)
+    _validar_senha = field_validator("nova_senha")(validar_forca_senha)
 
 
 class TokenResponse(BaseModel):
@@ -79,6 +72,7 @@ class UsuarioPublico(BaseModel):
     nome: str
     email: str
     papel: Papel
+    instituicao_id: uuid.UUID
     is_active: bool
     created_at: datetime
 
