@@ -51,7 +51,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               if (!open) remover(toast.id)
             }}
             className={cn(
-              'rounded-md border p-4 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out',
+              'rounded-lg border p-4 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out',
               toneClasses[toast.tone],
             )}
           >

@@ -70,6 +70,17 @@ class Settings(BaseSettings):
     groq_max_tokens_resposta: int = 700
     dica_niveis_maximo: int = 4
 
+    # --- Observabilidade (Parte 8) ---
+    # Metricas Prometheus (GET /metrics) - sem custo/risco externo, ligado
+    # por padrao. Sentry so ativa com um DSN real (vazio = desabilitado,
+    # mesmo padrao do Groq acima: nunca falha a inicializacao da app por
+    # falta de uma integracao de terceiros opcional).
+    metrics_enabled: bool = True
+    sentry_dsn: str = Field(
+        default="", description="DSN do Sentry; vazio desabilita o rastreamento de erros"
+    )
+    sentry_traces_sample_rate: float = 0.0
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

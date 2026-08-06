@@ -45,7 +45,7 @@ export function SelectField({
           aria-describedby={[ajudaId, erroId].filter(Boolean).join(' ') || undefined}
           aria-invalid={!!erro || undefined}
           className={cn(
-            'flex items-center justify-between gap-2 rounded-md border bg-[var(--color-bg)] px-3 py-2 text-sm',
+            'flex items-center justify-between gap-2 rounded-lg border bg-[var(--color-bg)] px-3 py-2 text-sm',
             'text-[var(--color-fg)] disabled:cursor-not-allowed disabled:opacity-60',
             erro ? 'border-[var(--color-danger)]' : 'border-[var(--color-border)]',
           )}
@@ -57,7 +57,7 @@ export function SelectField({
         </SelectPrimitive.Trigger>
         <SelectPrimitive.Portal>
           <SelectPrimitive.Content
-            className="z-50 overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] shadow-lg"
+            className="z-50 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] shadow-lg"
             position="popper"
             sideOffset={4}
           >

@@ -196,18 +196,18 @@ async def test_aluno_nao_acessa_historico_de_dicas_de_outro_aluno(
 async def test_sem_groq_api_key_endpoint_devolve_503(
     client: AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Sem chave configurada (GROQ_API_KEY vazia no .env de teste), o
-    motor real (app/ai/groq_client.py) deve recusar de forma controlada -
-    nunca deixar a excecao do SDK vazar como 500 generico. Restauramos a
-    funcao real por cima do mock global desta suite (fixture
+    """Sem chave configurada, o motor real (app/ai/groq_client.py) deve
+    recusar de forma controlada - nunca deixar a excecao do SDK vazar como
+    500 generico. Forca a ausencia de chave via monkeypatch em vez de
+    assumir o estado do .env local (que pode ter uma chave real para
+    testes manuais - ver app/core/config.py:get_settings, cacheada) e
+    restaura a funcao real por cima do mock global desta suite (fixture
     `_mockar_groq`) so para este teste."""
     import app.services.dica_service as dica_service_module
     from app.ai.groq_client import gerar_texto as gerar_texto_real
     from app.core.config import get_settings
 
-    assert not get_settings().groq_api_key, (
-        "este teste assume GROQ_API_KEY vazia no ambiente de teste"
-    )
+    monkeypatch.setattr(get_settings(), "groq_api_key", "")
     monkeypatch.setattr(dica_service_module, "gerar_texto", gerar_texto_real)
 
     ctx = await _preparar_turma_com_problema(client, db_session, sufixo="semchave")

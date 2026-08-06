@@ -53,19 +53,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         Pular para o conteúdo principal
       </a>
 
-      <header className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <span className="text-base font-bold text-[var(--color-primary)]">
+      <header data-card className="bg-[var(--color-bg)] shadow-[0_1px_2px_rgba(20,20,40,0.06)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+          <span className="text-base font-semibold text-[var(--color-primary)]">
             Plataforma Adaptativa
           </span>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-[var(--color-muted)]">
-              {usuario.nome} · <strong>{PAPEL_LABEL[usuario.papel]}</strong>
+              {usuario.nome} · {PAPEL_LABEL[usuario.papel]}
             </span>
             <button
               type="button"
               onClick={() => void handleLogout()}
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[var(--color-fg)] hover:bg-[var(--color-surface)]"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[var(--color-fg)] hover:bg-[var(--color-surface)]"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
               Sair
@@ -74,9 +74,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-6 py-8">
         <nav aria-label="Navegação principal" className="w-52 shrink-0">
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-0.5">
             {itensVisiveis.map((item) => (
               <li key={item.to}>
                 <NavLink
@@ -84,10 +84,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                      'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-[var(--color-primary)] text-[var(--color-primary-fg)]'
-                        : 'text-[var(--color-fg)] hover:bg-[var(--color-surface)]',
+                        ? 'bg-[var(--color-primary-soft)] text-[var(--color-primary)]'
+                        : 'text-[var(--color-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-fg)]',
                     )
                   }
                 >

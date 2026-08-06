@@ -7,20 +7,27 @@
  * salvas do usuário (PreferenciasAcessibilidade, Parte 3 do backend).
  */
 :root {
+  /* --color-bg é o branco dos cartões/painéis; a PÁGINA usa --color-surface
+     por baixo (ver `body` abaixo) - é esse contraste sutil entre os dois
+     que separa um cartão do fundo, então a borda pode ser quase invisível
+     em vez de fazer todo o trabalho sozinha (a causa mais comum de UI
+     "pesada": bordas fortes tentando compensar a falta desse contraste). */
   --color-bg: #ffffff;
-  --color-fg: #1a1a2e;
-  --color-muted: #5b5b6e;
-  --color-border: #d6d6e0;
+  --color-fg: #26263a;
+  --color-muted: #6b6b7d;
+  --color-border: #e9e9f1;
   --color-primary: #4338ca;
   --color-primary-fg: #ffffff;
   --color-primary-hover: #3730a3;
+  --color-primary-soft: #eef0fc;
   --color-danger: #b91c1c;
   --color-danger-bg: #fef2f2;
   --color-success: #15803d;
   --color-success-bg: #f0fdf4;
   --color-warning: #92400e;
   --color-warning-bg: #fffbeb;
-  --color-surface: #f8f8fc;
+  --color-surface: #f6f6fa;
+  --radius: 0.625rem;
   --font-scale: 1;
   --motion-duration: 150ms;
 }
@@ -35,6 +42,7 @@ html.a11y-alto-contraste {
   --color-primary: #ffd400;
   --color-primary-fg: #000000;
   --color-primary-hover: #ffe14d;
+  --color-primary-soft: #332b00;
   --color-danger: #ff6b6b;
   --color-danger-bg: #2b0000;
   --color-success: #6bff8f;
@@ -82,7 +90,10 @@ html {
 }
 
 body {
-  background-color: var(--color-bg);
+  /* Fundo da página em --color-surface (não --color-bg, que é o branco
+     dos cartões) - o leve contraste entre os dois é o que dá profundidade
+     ao layout sem precisar de bordas ou sombras fortes. */
+  background-color: var(--color-surface);
   color: var(--color-fg);
   font-family:
     'Atkinson Hyperlegible',
@@ -114,6 +125,20 @@ html.a11y-fonte-legivel body {
 html.a11y-alto-contraste :focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
+}
+
+/* Sombras suaves não têm contraste nenhum contra um fundo preto - no modo
+   alto contraste, cartões voltam a usar borda sólida para se separar do
+   fundo (index.css:Card não aplica borda por padrão, só sombra). */
+html.a11y-alto-contraste [data-card] {
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+html.a11y-alto-contraste [data-badge] {
+  border: 1px solid currentColor;
+}
+html.a11y-alto-contraste [data-button] {
+  border: 1px solid var(--color-border);
 }
 
 /* Link para pular a navegação e ir direto ao conteúdo - primeiro elemento

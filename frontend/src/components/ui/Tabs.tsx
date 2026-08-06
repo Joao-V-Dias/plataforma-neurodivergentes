@@ -9,7 +9,7 @@ export function TabsList(props: TabsPrimitive.TabsListProps) {
     <TabsPrimitive.List
       {...props}
       className={cn(
-        'inline-flex gap-1 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-1',
+        'inline-flex gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1',
         props.className,
       )}
     />

@@ -27,7 +27,12 @@ def _error_response(
     return JSONResponse(status_code=status_code, content=body.model_dump(mode="json"))
 
 
-async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    # Starlette so despacha esta funcao para excecoes StarletteHTTPException
+    # (registro em register_exception_handlers abaixo) - a assinatura aqui
+    # e Exception so porque e o que add_exception_handler exige; o assert
+    # documenta e restaura o tipo especifico para o resto da funcao.
+    assert isinstance(exc, StarletteHTTPException)
     return _error_response(
         status_code=exc.status_code,
         code="http_error",
@@ -35,9 +40,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
     )
 
 
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, RequestValidationError)
     fields: dict[str, list[str]] = {}
     for error in exc.errors():
         field_path = ".".join(str(loc) for loc in error["loc"] if loc != "body")
@@ -51,7 +55,8 @@ async def validation_exception_handler(
     )
 
 
-async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+async def rate_limit_exceeded_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, RateLimitExceeded)
     return _error_response(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         code="rate_limited",

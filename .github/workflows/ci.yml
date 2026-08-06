@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+# Cancela execucoes anteriores do mesmo PR/branch quando um novo push
+# chega - evita gastar minutos de CI rodando uma versao ja obsoleta.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, type-check, testes, cobertura)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: teacher_app
+          POSTGRES_PASSWORD: teacher_app_ci_pw
+          POSTGRES_DB: teacher_platform
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U teacher_app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      APP_DEBUG: "false"
+      SECRET_KEY: ci-secret-key-nao-usar-em-producao-0123456789abcdef
+      DATABASE_URL: postgresql+asyncpg://teacher_app:teacher_app_ci_pw@localhost:5432/teacher_platform
+      REDIS_URL: redis://localhost:6379/0
+      LOG_JSON: "true"
+      LGPD_POLITICA_VERSAO: "1.0"
+      # GROQ_API_KEY fica vazia de proposito: o motor de IA (Parte 6) deve
+      # funcionar em modo "desabilitado" (503 controlado) sem custar nada
+      # no CI - os testes de app/tests/test_dicas.py mockam o provedor e
+      # nao dependem de rede.
+      GROQ_API_KEY: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check app alembic scripts
+
+      - name: Type-check (mypy)
+        run: mypy app
+
+      - name: Aplicar migrations
+        run: alembic upgrade head
+
+      - name: Testes com cobertura
+        run: pytest --cov --cov-report=xml --cov-report=term
+
+      - name: Upload relatorio de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-backend
+          path: coverage.xml
+          retention-days: 14
+
+  frontend:
+    name: Frontend (lint, type-check, testes, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint (eslint)
+        run: npm run lint
+
+      - name: Testes (vitest)
+        run: npm run test
+
+      - name: Build de producao
+        run: npm run build
+
+  docker:
+    name: Build da imagem Docker
+    runs-on: ubuntu-latest
+    # So valida o build da imagem depois que o codigo ja passou nos
+    # testes - nao adianta empacotar algo que acabou de quebrar.
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (sem push - so valida que a imagem constroi)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: plataforma-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

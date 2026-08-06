@@ -8,7 +8,9 @@ mesmo em codigo chamado varias camadas abaixo do endpoint."""
 
 import logging
 import sys
+from collections.abc import MutableMapping
 from contextvars import ContextVar
+from typing import Any, cast
 
 import structlog
 
@@ -25,7 +27,9 @@ def set_request_id(request_id: str) -> None:
     _request_id_ctx.set(request_id)
 
 
-def _inject_request_id(_logger: object, _method_name: str, event_dict: dict) -> dict:
+def _inject_request_id(
+    _logger: object, _method_name: str, event_dict: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
     request_id = get_request_id()
     if request_id is not None:
         event_dict["request_id"] = request_id
@@ -41,7 +45,7 @@ def configure_logging() -> None:
         level=settings.log_level.upper(),
     )
 
-    shared_processors = [
+    shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
@@ -76,4 +80,7 @@ def configure_logging() -> None:
 
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
-    return structlog.get_logger(name)
+    # structlog.get_logger() e deliberadamente pouco tipado a montante
+    # (devolve o wrapper configurado em tempo de execucao); o cast reflete
+    # o que configure_logging() de fato registra como wrapper_class acima.
+    return cast(structlog.stdlib.BoundLogger, structlog.get_logger(name))

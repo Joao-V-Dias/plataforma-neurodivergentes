@@ -60,7 +60,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           aria-describedby={describedBy}
           aria-invalid={!!erro || undefined}
           className={cn(
-            'rounded-md border bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-fg)]',
+            'rounded-lg border bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-fg)]',
             'placeholder:text-[var(--color-muted)]',
             erro ? 'border-[var(--color-danger)]' : 'border-[var(--color-border)]',
             className,
@@ -89,7 +89,7 @@ export const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>
           aria-describedby={describedBy}
           aria-invalid={!!erro || undefined}
           className={cn(
-            'rounded-md border bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-fg)]',
+            'rounded-lg border bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-fg)]',
             'placeholder:text-[var(--color-muted)]',
             erro ? 'border-[var(--color-danger)]' : 'border-[var(--color-border)]',
             className,

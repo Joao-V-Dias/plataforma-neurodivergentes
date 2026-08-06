@@ -20,11 +20,13 @@ from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import RequestIDMiddleware
+from app.core.monitoring import configurar_metricas, configurar_sentry
 from app.core.rate_limit import limiter
 from app.core.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
 configure_logging()
+configurar_sentry()
 logger = get_logger(__name__)
 
 
@@ -37,6 +39,14 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title=settings.app_name,
+    description=(
+        "API da Plataforma de Educacao Adaptativa em Programacao para "
+        "Pessoas Neurodivergentes: gestao academica (turmas/matriculas), "
+        "banco de problemas com execucao de codigo sandboxada e motor de "
+        "dicas progressivas orientado por IA e pelo perfil do aluno "
+        "(neurodivergencia + Big Five)."
+    ),
+    version="1.0.0",
     debug=settings.app_debug,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -45,6 +55,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
+configurar_metricas(app)
 
 # Request-id primeiro para que todo log subsequente (inclusive de outros
 # middlewares) ja carregue o id de correlacao.

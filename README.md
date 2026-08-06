@@ -122,7 +122,53 @@ de bootstrap:
 O `--instituicao-codigo` é o código que alunos usam para se auto-cadastrar
 em `POST /auth/register` (`instituicao_codigo` no corpo da requisição).
 
-### 7. Subir a API
+### 7. Criando os demais usuários (Diretor → Coordenador → Professor → Aluno)
+
+A hierarquia de RBAC (`app/core/rbac.py`) é: **Diretor > Coordenador >
+Professor > Aluno**. Um papel só cria contas de papel **estritamente
+abaixo** do seu — e pode criar qualquer papel abaixo, não só o
+imediatamente inferior (Diretor cria Coordenador, Professor *ou* Aluno
+diretamente). Duas formas de criar cada conta:
+
+- **Pelo frontend** (`http://localhost:5173`, depois de logado com uma
+  conta de papel suficiente): menu **Usuários** → **Novo usuário**.
+- **Pela API**: `POST /api/v1/usuarios` com `Authorization: Bearer
+  <token de quem está criando>`.
+
+Passo a passo completo, do zero:
+
+1. **Diretor** — já existe a partir do passo 6 acima (`seed_diretor.py`).
+   Faça login com o e-mail/senha que você escolheu ali.
+2. **Coordenador** — logado como Diretor:
+   ```powershell
+   curl -X POST http://127.0.0.1:8000/api/v1/usuarios `
+     -H "Authorization: Bearer <token_do_diretor>" -H "Content-Type: application/json" `
+     -d '{"nome":"Coordenadora Ana","email":"ana@escola.com","senha":"SenhaForte123","papel":"coordenador"}'
+   ```
+3. **Professor** — logado como Diretor ou Coordenador, mesmo formato,
+   trocando `"papel":"professor"`.
+4. **Aluno**, de duas formas:
+   - **Criado direto por um Diretor/Coordenador/Professor**: mesmo
+     formato acima, `"papel":"aluno"` — a conta já nasce **ativa**.
+   - **Auto-cadastro** (o aluno cria a própria conta):
+     `POST /api/v1/auth/register` com `nome`, `email`, `senha`,
+     `instituicao_codigo` (o código do passo 6) e `aceite_lgpd: true`. A
+     conta nasce **inativa** e só funciona depois que um Professor+
+     aprova: `POST /api/v1/usuarios/{id}/aprovar` (ou o botão
+     **Aprovar** na tela **Usuários** do frontend).
+
+Todas as contas criadas diretamente por staff (passos 2-4, exceto
+auto-cadastro) já nascem ativas e podem logar imediatamente com o e-mail
+e a senha informados. Senhas seguem a mesma regra em toda a API: mínimo
+8 caracteres, com pelo menos uma letra e um número.
+
+Manuais de uso detalhados (linguagem simples, por papel):
+[Diretor](docs/manuais/manual-diretor.md) ·
+[Coordenador](docs/manuais/manual-coordenador.md) ·
+[Professor](docs/manuais/manual-professor.md) ·
+[Aluno](docs/manuais/manual-aluno.md).
+
+### 8. Subir a API
 
 ```powershell
 .venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -389,11 +435,51 @@ código), Vitest + Testing Library.
   code-splitting por rota via `React.lazy`, então o chunk inicial (tela de
   login) não carrega CodeMirror nem as telas de gestão.
 
+## Observabilidade, testes de segurança, CI/CD e documentação (Parte 8)
+
+- **Cobertura de testes** (`pytest-cov`, `[tool.coverage]` em
+  `pyproject.toml`): suíte inteira mede ~92% de cobertura em `app/`, com
+  um piso de **80%** (`fail_under`) que quebra o CI se cair abaixo -
+  medido especificamente sobre `app/services` (as regras de negócio) o
+  número é ~94%. `app/ai/groq_client.py` fica de fora do topo de
+  propósito: testar o corpo real da chamada ao SDK custaria dinheiro e
+  seria não-determinístico (ver `app/tests/test_dicas.py`).
+- **Testes de segurança** (`app/tests/test_security.py`): acesso
+  cross-role negado (Aluno em endpoint de Professor+, Professor tentando
+  criar Diretor), token expirado/adulterado/forjado com segredo errado/
+  do tipo errado - todos rejeitados com 401; IDOR entre instituições
+  (recurso de outra instituição sempre 404, nunca revela que existe);
+  tentativas de injeção SQL em campos de texto (o ORM parametriza tudo,
+  então o dado só é tratado como texto literal); confirmação de que
+  nenhuma resposta de erro vaza stack trace ou tipo Python.
+- **CI/CD** (`.github/workflows/ci.yml`, GitHub Actions): três jobs em
+  paralelo - `backend` (Postgres + Redis como services, ruff, mypy,
+  migrations, pytest com cobertura), `frontend` (eslint, vitest, build)
+  e `docker` (valida que a imagem builda, rodando só depois que os dois
+  primeiros passam). Roda em todo push e pull request.
+- **Imagem Docker** (`Dockerfile`, multi-stage): usada só pelo CI/deploy,
+  não para desenvolvimento local (ver `docs/adr/0001-*.md`). Testada
+  manualmente com `docker build` + `docker run` apontando para o
+  Postgres/Redis do host via `host.docker.internal`.
+- **Monitoramento** (`app/core/monitoring.py`): métricas Prometheus em
+  `GET /metrics` (latência, contagem e status code por rota), habilitadas
+  por padrão e sem custo. Sentry é opcional - só ativa com `SENTRY_DSN`
+  configurada (`send_default_pii=False` sempre, para nunca vazar corpo de
+  request/response, que pode conter dado sensível de saúde).
+- **Documentação técnica**: OpenAPI/Swagger automático do FastAPI
+  (`/docs`, `/redoc`) já vinha desde a Parte 1; [ADRs](docs/adr/README.md)
+  documentam as decisões de arquitetura de cada parte; [guia de
+  onboarding](docs/onboarding.md) para quem for mexer no código.
+- **Manuais de uso** (linguagem simples, sem jargão técnico): um por
+  papel em [`docs/manuais/`](docs/manuais/README.md).
+
 ## Testes e lint
 
 ```powershell
 .venv\Scripts\python.exe -m pytest
+.venv\Scripts\python.exe -m pytest --cov --cov-report=html   # com cobertura (abre htmlcov/index.html)
 .venv\Scripts\python.exe -m ruff check app alembic scripts
+.venv\Scripts\python.exe -m mypy app
 ```
 
 Frontend (dentro de `frontend/`):
@@ -437,7 +523,16 @@ Toda resposta de erro da API segue o mesmo formato:
 }
 ```
 
-## Próximas partes
+## Status do projeto
 
-Observabilidade, testes de segurança, CI/CD e documentação (Parte 8) —
-ver escopo completo do projeto.
+As 8 partes do escopo original estão implementadas: autenticação e RBAC
+(2), modelagem de dados e gestão de usuários (3), gestão acadêmica (4),
+banco de problemas e execução sandboxada (5), motor de IA adaptativa
+(6), frontend (7) e observabilidade/testes/CI-CD/documentação (8).
+
+Pendências conhecidas, documentadas onde surgiram: visibilidade de
+perfil sensível ainda por instituição inteira em vez de por turma
+(`docs/lgpd.md`, seção 8); fluxo de consentimento de responsável legal
+para alunos menores de idade (idem); Grafana não provisionado neste
+repositório (`docs/adr/0007-*.md` — a métrica é exposta, o dashboard
+fica a critério de quem for operar em produção).
