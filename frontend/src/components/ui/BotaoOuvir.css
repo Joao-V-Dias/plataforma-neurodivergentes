@@ -1,0 +1,14 @@
+.botao-ouvir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+.botao-ouvir:hover { color: var(--text); border-color: var(--text-muted); }
+.botao-ouvir[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); }

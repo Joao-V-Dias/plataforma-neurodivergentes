@@ -3,8 +3,6 @@ import { AccessibilityContext } from './AccessibilityContext'
 
 export function useAccessibility() {
   const ctx = useContext(AccessibilityContext)
-  if (!ctx) {
-    throw new Error('useAccessibility precisa ser usado dentro de <AccessibilityProvider>.')
-  }
+  if (!ctx) throw new Error('useAccessibility precisa estar dentro de <AccessibilityProvider>.')
   return ctx
 }

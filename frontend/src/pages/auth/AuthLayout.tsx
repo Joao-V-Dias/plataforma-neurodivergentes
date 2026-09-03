@@ -1,21 +1,30 @@
 import type { ReactNode } from 'react'
-import { Card } from '@/components/ui/Card'
+import './AuthLayout.css'
 
-export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+export function AuthLayout({
+  titulo,
+  subtitulo,
+  children,
+  rodape,
+}: {
+  titulo: string
+  subtitulo?: string
+  children: ReactNode
+  rodape?: ReactNode
+}) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-surface)] px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-xl font-bold text-[var(--color-primary)]">Plataforma Adaptativa</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Educação em programação para pessoas neurodivergentes
-          </p>
+    <div className="auth-layout">
+      <div className="auth-layout__card">
+        <div className="auth-layout__marca">
+          <span className="auth-layout__logo" aria-hidden="true">
+            {'</>'}
+          </span>
+          <span>Plataforma Adaptativa</span>
         </div>
-        <Card>
-          <h2 className="mb-1 text-lg font-semibold text-[var(--color-fg)]">{title}</h2>
-          {subtitle && <p className="mb-5 text-sm text-[var(--color-muted)]">{subtitle}</p>}
-          {children}
-        </Card>
+        <h1 className="auth-layout__titulo">{titulo}</h1>
+        {subtitulo && <p className="auth-layout__subtitulo">{subtitulo}</p>}
+        <div className="auth-layout__corpo">{children}</div>
+        {rodape && <div className="auth-layout__rodape">{rodape}</div>}
       </div>
     </div>
   )

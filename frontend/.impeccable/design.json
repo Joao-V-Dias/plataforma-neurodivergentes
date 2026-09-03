@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-03T00:00:00Z",
+  "title": "Design System: Plataforma Adaptativa",
+  "extensions": {
+    "colorMeta": {
+      "signal-cyan": {
+        "role": "primary",
+        "displayName": "Signal Cyan",
+        "canonical": "#17708f",
+        "tonalRamp": ["#0a2a35", "#0d3b49", "#12546a", "#17708f", "#2d8fb0", "#5ab0cc", "#8fcbe0", "#c9e8f2"]
+      },
+      "critical-red": {
+        "role": "status-critical",
+        "displayName": "Critical Red",
+        "canonical": "#a8362a",
+        "tonalRamp": ["#3a110d", "#571910", "#7c2419", "#a8362a", "#c05244", "#d67d70", "#e8ada4", "#f5d6d1"]
+      },
+      "reading-green": {
+        "role": "status-success",
+        "displayName": "Reading Green",
+        "canonical": "#1c744a",
+        "tonalRamp": ["#082418", "#0e3624", "#144f34", "#1c744a", "#2e9564", "#5cb388", "#93cfae", "#cbe9d9"]
+      },
+      "attention-amber": {
+        "role": "status-attention",
+        "displayName": "Attention Amber",
+        "canonical": "#96590a",
+        "tonalRamp": ["#2e1a03", "#452705", "#663a08", "#96590a", "#b87a1f", "#d29c4d", "#e5bf8a", "#f2decb"]
+      },
+      "decorative-pink": { "role": "decorative", "displayName": "Decorative Plum", "canonical": "#8a4a7e" },
+      "decorative-cyan": { "role": "decorative", "displayName": "Decorative Slate Cyan", "canonical": "#2d5f8c" },
+      "decorative-orange": { "role": "decorative", "displayName": "Decorative Rust", "canonical": "#b0530f" },
+      "decorative-yellow": { "role": "decorative", "displayName": "Decorative Ochre", "canonical": "#8a7a12" },
+      "bg": { "role": "neutral", "displayName": "Panel Background", "canonical": "#eef1f3" },
+      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "#e2e7ea" },
+      "elevated": { "role": "neutral", "displayName": "Elevated", "canonical": "#d3dade" },
+      "border": { "role": "neutral", "displayName": "Border", "canonical": "#7c93a0" },
+      "border-muted": { "role": "neutral", "displayName": "Border Muted", "canonical": "#b7c3c9" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#131f26" },
+      "ink-secondary": { "role": "neutral", "displayName": "Ink Secondary", "canonical": "#435661" },
+      "ink-muted": { "role": "neutral", "displayName": "Ink Muted", "canonical": "#56636b" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Largest page-level moments; lightly used." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles (IBM Plex Sans)." },
+      "body": { "displayName": "Body", "purpose": "Prose and descriptive copy (Atkinson Hyperlegible, accessibility-mandated)." },
+      "label": { "displayName": "Label", "purpose": "Column headers, status labels, badges (JetBrains Mono, uppercase)." },
+      "readout": { "displayName": "Readout", "purpose": "Dates, counters, station numbers, periods — tabular instrument values (JetBrains Mono, tabular-nums)." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "motion-fast", "value": "120ms cubic-bezier(0.2, 0, 0, 1)", "purpose": "Hover/focus background and color transitions." },
+      { "name": "motion", "value": "180ms cubic-bezier(0.2, 0, 0, 1)", "purpose": "Default transition duration." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "720px" },
+      { "name": "md", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Badge — Sucesso",
+      "kind": "chip",
+      "refersTo": "badge-sucesso",
+      "description": "LED-dot status chip for success/active states; label always accompanies color.",
+      "html": "<span class=\"ds-badge ds-badge--sucesso\">Aprovado</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.55rem 0.2rem 0.45rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border: 1px solid transparent; } .ds-badge::before { content: ''; width: 0.4rem; height: 0.4rem; border-radius: 999px; background: currentColor; } .ds-badge--sucesso { color: #1c744a; background: color-mix(in srgb, #1c744a 14%, #e2e7ea); border-color: color-mix(in srgb, #1c744a 35%, transparent); }"
+    },
+    {
+      "name": "Badge — Erro",
+      "kind": "chip",
+      "refersTo": "badge-erro",
+      "description": "LED-dot status chip reserved strictly for critical/error states.",
+      "html": "<span class=\"ds-badge ds-badge--erro\">Falhou</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.55rem 0.2rem 0.45rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border: 1px solid transparent; } .ds-badge::before { content: ''; width: 0.4rem; height: 0.4rem; border-radius: 999px; background: currentColor; } .ds-badge--erro { color: #a8362a; background: color-mix(in srgb, #a8362a 14%, #e2e7ea); border-color: color-mix(in srgb, #a8362a 35%, transparent); }"
+    },
+    {
+      "name": "Avatar Dial",
+      "kind": "custom",
+      "refersTo": "avatar-dial",
+      "description": "Circular instrument-dial avatar; identity color drawn only from the decorative set, never a status hue.",
+      "html": "<span class=\"ds-avatar\" style=\"width:2.25rem;height:2.25rem;\">JS</span>",
+      "css": ".ds-avatar { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1.5px solid #7c93a0; background: color-mix(in srgb, #2d5f8c 14%, #d3dade); color: #2d5f8c; font-weight: 600; flex-shrink: 0; }"
+    },
+    {
+      "name": "Station Row",
+      "kind": "custom",
+      "refersTo": "station-row",
+      "description": "Instrument-strip list row from MinhasTurmasPage: LED + station number, name, period, 5-segment intensity band reflecting real active state, plain-language status, hover-revealed open affordance.",
+      "html": "<a class=\"ds-station-row\" href=\"#\"><span class=\"ds-station-row__estacao\"><span class=\"ds-station-row__led\"></span>01</span><span class=\"ds-station-row__nome\">Turma A — Python Básico</span><span class=\"ds-station-row__periodo\">2026.2</span><span class=\"ds-station-row__leitura\"><span class=\"ds-station-row__banda\"><i></i><i></i><i></i><i></i><i></i></span><span class=\"ds-station-row__status\">em curso</span></span><span class=\"ds-station-row__abrir\">abrir →</span></a>",
+      "css": ".ds-station-row { display: grid; grid-template-columns: 5rem minmax(0,1fr) 9rem 8.5rem 4.5rem; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid #b7c3c9; color: #131f26; text-decoration: none; transition: background-color 120ms; } .ds-station-row:hover, .ds-station-row:focus-visible { background: #d3dade; } .ds-station-row:hover .ds-station-row__nome { color: #17708f; } .ds-station-row__estacao { display: inline-flex; align-items: center; gap: 0.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.875rem; color: #435661; } .ds-station-row__led { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: #1c744a; } .ds-station-row__nome { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 1.125rem; } .ds-station-row__periodo { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: #435661; } .ds-station-row__leitura { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; } .ds-station-row__banda { display: inline-flex; align-items: flex-end; gap: 2px; height: 0.9rem; } .ds-station-row__banda i { width: 3px; background: #1c744a; border-radius: 1px; display: inline-block; } .ds-station-row__banda i:nth-child(1) { height: 30%; } .ds-station-row__banda i:nth-child(2) { height: 50%; } .ds-station-row__banda i:nth-child(3) { height: 70%; } .ds-station-row__banda i:nth-child(4) { height: 85%; } .ds-station-row__banda i:nth-child(5) { height: 100%; } .ds-station-row__status { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #1c744a; } .ds-station-row__abrir { justify-self: end; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; color: #17708f; }"
+    },
+    {
+      "name": "Instrument Rail Tab",
+      "kind": "nav",
+      "refersTo": "nav-tab",
+      "description": "Aluno shell vertical nav tab: icon-over-label, LED edge bar + corner dot on active, per-tab decorative identity ink.",
+      "html": "<a class=\"ds-tab ds-tab--active\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/></svg><span>Turmas</span></a>",
+      "css": ".ds-tab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.75rem 0.25rem; margin: 0 0.5rem; border-radius: 4px; color: #435661; font-size: 0.75rem; font-weight: 600; text-decoration: none; transition: background-color 120ms, color 120ms; } .ds-tab:hover { background: #d3dade; color: #131f26; } .ds-tab--active { background: #d3dade; color: #17708f; } .ds-tab--active::before { content: ''; position: absolute; left: -0.55rem; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 999px; background: #17708f; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Estação de Leitura (Reading Station)",
+    "overview": "This is a monitoring-instrument console — the visual grammar of an INMET-style weather/telemetry station adapted to a programming-education product for neurodivergent students. Progress is rendered as a personal reading a student checks on their own instrument panel, never a rank against classmates: LEDs, gauge-chips, tabular readouts, and banded intensity meters stand in for cards and rank badges. The world is dark-first in spirit but ships as two fully complete, independently normative themes — light is the actual runtime default — plus an independent pure-black/white high-contrast layer switched by a stored accessibility preference, not a design toggle. The console vocabulary is deliberately restrained: hairline 1px bezels carry all hierarchy, there is no shadow anywhere, radii stay small and consistent, and color is functional rather than decorative — reserved almost entirely for status rather than for branding or mood. This restraint is a direct answer to the product's own audience: ADHD/autism/dyslexia/dyscalculia students need a low-stimulation, literal, predictable surface, and PRODUCT.md's principle that game framing must never read as childish or turn into scoreboard pressure. The build explicitly rejects the prior 'Working Notebook' world and generic pastel ed-tech.",
+    "keyCharacteristics": [
+      "Instrument-panel realism: LEDs, gauge-chip readouts, banded meters, tabular mono figures — never illustrative or playful iconography",
+      "Two complete parallel themes (light default, dark) plus an independent high-contrast layer, never a lightened/darkened derivative of the other",
+      "Color is scarce and operational: one signal cyan, one amber, one red, one green — each with exactly one reserved job",
+      "Flat by construction: no shadow exists anywhere in the built surfaces; hairline borders do all the work",
+      "Body copy is always achromatic; color appears only on the specific element carrying the live status"
+    ],
+    "rules": [
+      { "name": "The Signal Reserve Rule", "body": "Exactly four operational hues exist, each with exactly one job: signal cyan for active reading/link/focus/primary action; reading green for success/approved/active-station state; attention amber for streak/attention only, never error; critical red for error/critical/destructive only. A parallel decorative-identity set (pink, cyan, orange, yellow) exists purely for cosmetic variety and must never carry status meaning.", "section": "colors" },
+      { "name": "The Plain-Name Rule", "body": "Color never speaks alone. Every LED, badge, and status band ships with a literal text label alongside the color.", "section": "colors" },
+      { "name": "The Achromatic Body Rule", "body": "Body text and structural chrome stay strictly achromatic. Color is confined to the specific element carrying the active status.", "section": "colors" },
+      { "name": "The Tabular Readout Rule", "body": "Any value that represents a live count, date, period, or sequential number renders in JetBrains Mono with tabular-nums, never in the body sans.", "section": "typography" },
+      { "name": "The Flat Instrument Rule", "body": "Surfaces never lift or cast shadow, at rest or on hover. State changes communicate through background-tone stepping and border/color shifts only.", "section": "elevation" },
+      { "name": "The Round-Only-If-Real Rule", "body": "Full-pill radius (999px) is reserved for genuinely circular instrument components. Rectangular containers stay within the 4-8px radius steps.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do use JetBrains Mono with tabular-nums for every date, count, period, or sequential value.",
+      "Do pair every color-bearing status indicator (LED, badge, band) with a plain-language text label.",
+      "Do keep both light and dark themes as complete, independently defined token sets — never derive one from the other with a filter or opacity trick.",
+      "Do update a changed list row's status in place (LED, band, label) on refetch rather than removing and reinserting the DOM node.",
+      "Do confine the decorative hue set (pink, cyan, orange, yellow) to identity/cosmetic roles: avatar tint, per-tab nav identity ink.",
+      "Do reserve amber strictly for streak/attention (never error) and red strictly for critical/error (never a generic warning)."
+    ],
+    "donts": [
+      "Don't use box-shadow anywhere; depth comes from border + background-tone stepping only.",
+      "Don't use the reserved status hues (cyan/green/amber/red) for decorative or identity purposes — that confusion was an actual finish-review defect this round and must not recur.",
+      "Don't apply full-pill (999px) radius to anything that isn't a genuinely circular instrument part; rectangular containers stay in the 4-8px range.",
+      "Don't show fabricated or invented progress/intensity values — the 5-segment band reflects real active state, not a synthesized percentage.",
+      "Don't let color speak alone on any status indicator; always pair with a text label."
+    ]
+  }
+}

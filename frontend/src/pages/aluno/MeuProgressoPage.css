@@ -1,0 +1,57 @@
+.meu-progresso h1 { font-size: var(--text-h2); font-weight: 700; margin-bottom: var(--space-5); }
+
+.meu-progresso__metricas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+}
+.meu-progresso__metrica {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  background: var(--surface);
+}
+.meu-progresso__metrica-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius);
+  background: var(--elevated);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.meu-progresso__metrica-icone--yellow { color: var(--yellow); }
+.meu-progresso__metrica-icone--orange { color: var(--orange); }
+.meu-progresso__metrica-valor { font-size: var(--text-h4); font-weight: 700; }
+.meu-progresso__metrica-rotulo { font-size: var(--text-caption); color: var(--text-secondary); }
+
+.meu-progresso__nota { margin-top: var(--space-4); color: var(--text-secondary); font-size: var(--text-body-sm); }
+
+.meu-progresso__emblemas { margin-top: var(--space-7); }
+.meu-progresso__emblemas h2 { font-size: var(--text-h4); font-weight: 700; margin-bottom: var(--space-3); }
+.meu-progresso__vazio { color: var(--text-secondary); font-size: var(--text-body-sm); }
+.meu-progresso__lista-emblemas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.meu-progresso__lista-emblemas li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.meu-progresso__emblema-nome { font-size: var(--text-body-sm); font-weight: 600; }
+.meu-progresso__emblema-data { font-size: 10px; color: var(--text-muted); }
+
+.meu-progresso__ranking-aviso {
+  margin-top: var(--space-7);
+  font-size: var(--text-caption);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-muted);
+  padding-top: var(--space-4);
+}

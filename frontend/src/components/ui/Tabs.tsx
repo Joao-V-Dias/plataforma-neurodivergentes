@@ -1,34 +1,36 @@
-import * as TabsPrimitive from '@radix-ui/react-tabs'
-import { cn } from '@/lib/cn'
+import * as RadixTabs from '@radix-ui/react-tabs'
+import type { ReactNode } from 'react'
+import './Tabs.css'
 
-// eslint-disable-next-line react-refresh/only-export-components -- re-export de componente estável do Radix, não afeta fast refresh na prática
-export const Tabs = TabsPrimitive.Root
-
-export function TabsList(props: TabsPrimitive.TabsListProps) {
-  return (
-    <TabsPrimitive.List
-      {...props}
-      className={cn(
-        'inline-flex gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1',
-        props.className,
-      )}
-    />
-  )
+export interface AbaDef {
+  value: string
+  label: string
+  conteudo: ReactNode
 }
 
-export function TabsTrigger(props: TabsPrimitive.TabsTriggerProps) {
+export function Tabs({
+  value,
+  onValueChange,
+  abas,
+}: {
+  value: string
+  onValueChange: (v: string) => void
+  abas: AbaDef[]
+}) {
   return (
-    <TabsPrimitive.Trigger
-      {...props}
-      className={cn(
-        'rounded px-3 py-1.5 text-sm font-medium text-[var(--color-muted)] transition-colors',
-        'data-[state=active]:bg-[var(--color-bg)] data-[state=active]:text-[var(--color-fg)] data-[state=active]:shadow-sm',
-        props.className,
-      )}
-    />
+    <RadixTabs.Root value={value} onValueChange={onValueChange} className="tabs">
+      <RadixTabs.List className="tabs__list">
+        {abas.map((aba) => (
+          <RadixTabs.Trigger key={aba.value} value={aba.value} className="tabs__trigger">
+            {aba.label}
+          </RadixTabs.Trigger>
+        ))}
+      </RadixTabs.List>
+      {abas.map((aba) => (
+        <RadixTabs.Content key={aba.value} value={aba.value} className="tabs__conteudo">
+          {aba.conteudo}
+        </RadixTabs.Content>
+      ))}
+    </RadixTabs.Root>
   )
-}
-
-export function TabsContent(props: TabsPrimitive.TabsContentProps) {
-  return <TabsPrimitive.Content {...props} className={cn('mt-4', props.className)} />
 }

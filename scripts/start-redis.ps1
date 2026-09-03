@@ -7,5 +7,5 @@
 # iniciado via Start-Process/PowerShell, tratando o caminho como relativo
 # ao cwd. Passamos a configuracao minima via flags de linha de comando.
 
-$redisDir = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\taizod1024.redis-windows-fork_Microsoft.Winget.Source_8wekyb3d8bbwe\Redis-8.8.0-Windows-x64-msys2"
+$redisDir = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\taizod1024.redis-windows-fork_Microsoft.Winget.Source_8wekyb3d8bbwe\Redis-8.10.1-Windows-x64-msys2"
 & "$redisDir\redis-server.exe" --port 6379 --daemonize no

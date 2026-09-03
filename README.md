@@ -27,6 +27,7 @@ app/
 alembic/        # Migrations de banco de dados
 scripts/        # Scripts auxiliares de setup local (Postgres/Redis)
 frontend/       # SPA React + TypeScript (Parte 7) - ver secao dedicada abaixo
+battle-service/ # Servico standalone de WebSocket para batalhas - ver secao dedicada abaixo
 ```
 
 ## Pré-requisitos
@@ -434,6 +435,28 @@ código), Vitest + Testing Library.
 - **Build de produção:** `npm run build` (`tsc -b && vite build`) —
   code-splitting por rota via `React.lazy`, então o chunk inicial (tela de
   login) não carrega CodeMirror nem as telas de gestão.
+
+## Battle-service: pareamento de batalhas em tempo real
+
+Serviço FastAPI + WebSocket separado em `battle-service/` (processo, porta
+e deploy próprios - não faz parte de `app/`): quando dois usuários
+autenticados da mesma turma estão conectados e livres, sugere
+automaticamente uma batalha entre os dois. Só compartilha o
+`SECRET_KEY`/`JWT_ALGORITHM` do login com a API principal para validar o
+access token; não chama a API nem acessa o banco - estado (fila de
+disponíveis, convites pendentes) fica em memória, em um único processo.
+
+```powershell
+cd battle-service
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env   # SECRET_KEY/JWT_ALGORITHM iguais aos do .env da API principal
+uvicorn main:app --reload --port 8001
+```
+
+Health check: http://localhost:8001/health. Protocolo completo (mensagens
+WebSocket, códigos de fechamento) documentado em `battle-service/README.md`.
 
 ## Observabilidade, testes de segurança, CI/CD e documentação (Parte 8)
 

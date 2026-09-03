@@ -1,4 +1,3 @@
-import { isAxiosError } from 'axios'
 import { apiClient } from './client'
 import type {
   BigFiveRespostasRequest,
@@ -21,57 +20,12 @@ export async function obterQuestionarioBigFive(): Promise<QuestaoTIPI[]> {
   return data
 }
 
-export async function registrarPerfilAluno(
-  alunoId: string,
-  payload: RegistrarPerfilAlunoRequest,
-): Promise<PerfilAlunoResponse> {
-  const { data } = await apiClient.post<PerfilAlunoResponse>(
-    `/alunos/${alunoId}/perfil`,
-    payload,
-  )
-  return data
-}
-
-export async function obterPerfilAlunoVigente(
-  alunoId: string,
-): Promise<PerfilAlunoResponse | null> {
-  try {
-    const { data } = await apiClient.get<PerfilAlunoResponse>(`/alunos/${alunoId}/perfil`)
-    return data
-  } catch (erro) {
-    if (isNotFound(erro)) return null
-    throw erro
-  }
-}
-
-export async function obterHistoricoPerfilAluno(alunoId: string): Promise<PerfilAlunoResponse[]> {
-  const { data } = await apiClient.get<PerfilAlunoResponse[]>(
-    `/alunos/${alunoId}/perfil/historico`,
-  )
-  return data
-}
-
-/** POST /me/big-five - sempre autoaplicado (o próprio usuário logado
- * responde por si, não existe rota para um Professor+ preencher em nome
- * de um aluno - ver app/api/v1/perfis.py:registrar_meu_big_five). */
-export async function responderMeuBigFive(
-  payload: BigFiveRespostasRequest,
-): Promise<PerfilBigFiveResponse> {
+export async function enviarBigFive(payload: BigFiveRespostasRequest): Promise<PerfilBigFiveResponse> {
   const { data } = await apiClient.post<PerfilBigFiveResponse>('/me/big-five', payload)
   return data
 }
 
-export async function obterBigFiveVigente(alunoId: string): Promise<PerfilBigFiveResponse | null> {
-  try {
-    const { data } = await apiClient.get<PerfilBigFiveResponse>(`/alunos/${alunoId}/big-five`)
-    return data
-  } catch (erro) {
-    if (isNotFound(erro)) return null
-    throw erro
-  }
-}
-
-export async function obterMinhasPreferenciasAcessibilidade(): Promise<PreferenciasAcessibilidadeResponse> {
+export async function obterPreferenciasAcessibilidade(): Promise<PreferenciasAcessibilidadeResponse> {
   const { data } = await apiClient.get<PreferenciasAcessibilidadeResponse>(
     '/me/preferencias-acessibilidade',
   )
@@ -88,6 +42,25 @@ export async function atualizarPreferenciasAcessibilidade(
   return data
 }
 
-function isNotFound(erro: unknown): boolean {
-  return isAxiosError(erro) && erro.response?.status === 404
+export async function registrarPerfilAluno(
+  alunoId: string,
+  payload: RegistrarPerfilAlunoRequest,
+): Promise<PerfilAlunoResponse> {
+  const { data } = await apiClient.post<PerfilAlunoResponse>(`/alunos/${alunoId}/perfil`, payload)
+  return data
+}
+
+export async function obterPerfilAluno(alunoId: string): Promise<PerfilAlunoResponse> {
+  const { data } = await apiClient.get<PerfilAlunoResponse>(`/alunos/${alunoId}/perfil`)
+  return data
+}
+
+export async function obterHistoricoPerfilAluno(alunoId: string): Promise<PerfilAlunoResponse[]> {
+  const { data } = await apiClient.get<PerfilAlunoResponse[]>(`/alunos/${alunoId}/perfil/historico`)
+  return data
+}
+
+export async function obterBigFiveDeAluno(alunoId: string): Promise<PerfilBigFiveResponse> {
+  const { data } = await apiClient.get<PerfilBigFiveResponse>(`/alunos/${alunoId}/big-five`)
+  return data
 }

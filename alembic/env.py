@@ -11,7 +11,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Importa todos os modulos de modelos para que fiquem registrados em
 # Base.metadata antes do autogenerate rodar. Novos modelos (Parte 3+) devem
-# ser importados em app/models/__init__.py tambem.
+# ser importados em app/models/__init__.py tambem. Excecao: pacotes de
+# servico com model proprio fora de app/models (ex: app.foto_perfil, que
+# importa de app.models.base) sao importados direto aqui - importa-los de
+# dentro de app/models/__init__.py criaria um import circular entre os
+# dois pacotes.
+import app.foto_perfil.model  # noqa: F401
 import app.models  # noqa: F401
 from alembic import context
 from app.core.config import get_settings

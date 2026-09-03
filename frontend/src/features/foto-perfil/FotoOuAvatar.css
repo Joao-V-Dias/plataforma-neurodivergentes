@@ -1,0 +1,10 @@
+/* Mesmo mostrador redondo do avatar de ícone (ver Avatar.css), só que com
+   a foto real do usuário recortada dentro dele. */
+.foto-ou-avatar {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--elevated);
+  object-fit: cover;
+}

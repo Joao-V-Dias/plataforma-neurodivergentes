@@ -125,3 +125,37 @@ async def somar_tempo_execucao_na_turma(
         .where(Submissao.aluno_id == aluno_id, problema_turmas.c.turma_id == turma_id)
     )
     return int(result.scalar_one())
+
+
+async def ja_resolveu_problema(
+    db: AsyncSession,
+    *,
+    aluno_id: uuid.UUID,
+    problema_id: uuid.UUID,
+    excluir_submissao_id: uuid.UUID,
+) -> bool:
+    """Usado por app/services/pontuacao_service.py para so conceder pontos
+    na primeira vez que um problema e resolvido - reenviar um problema ja
+    aceito antes nao deve gerar pontos novos."""
+    result = await db.execute(
+        select(func.count())
+        .select_from(Submissao)
+        .where(
+            Submissao.aluno_id == aluno_id,
+            Submissao.problema_id == problema_id,
+            Submissao.status == StatusSubmissao.ACEITO,
+            Submissao.id != excluir_submissao_id,
+        )
+    )
+    return result.scalar_one() > 0
+
+
+async def contar_problemas_resolvidos_total(db: AsyncSession, aluno_id: uuid.UUID) -> int:
+    """Como contar_problemas_resolvidos_na_turma, mas sem escopo de turma -
+    usado pelo emblema de "10 problemas resolvidos"."""
+    result = await db.execute(
+        select(func.count(func.distinct(Submissao.problema_id)))
+        .select_from(Submissao)
+        .where(Submissao.aluno_id == aluno_id, Submissao.status == StatusSubmissao.ACEITO)
+    )
+    return result.scalar_one()

@@ -1,8 +1,6 @@
 /**
  * Tipos espelhando 1:1 os schemas Pydantic do backend (app/schemas/*.py).
- * Nenhum tipo aqui deve "inventar" um formato diferente do que a API
- * realmente devolve - se o backend mudar um schema, este arquivo deve
- * mudar junto (não há geração automática nesta versão do projeto).
+ * Se o backend mudar um schema, este arquivo muda junto.
  */
 
 // --- app/models/usuario.py:Papel -------------------------------------------
@@ -17,9 +15,6 @@ export const PAPEL_LABEL: Record<Papel, string> = {
   aluno: 'Aluno',
 }
 
-/** Papéis que um usuário do `papel` dado pode criar (estritamente abaixo
- * na hierarquia) - espelha app/core/rbac.py:papeis_a_partir_de usado ao
- * inverso em app/services/usuario_service.py. */
 export function papeisCriaveisPor(papel: Papel): Papel[] {
   const idx = PAPEIS_ORDEM.indexOf(papel)
   return PAPEIS_ORDEM.slice(idx + 1)
@@ -27,6 +22,10 @@ export function papeisCriaveisPor(papel: Papel): Papel[] {
 
 export function papelAtendeMinimo(papel: Papel, minimo: Papel): boolean {
   return PAPEIS_ORDEM.indexOf(papel) <= PAPEIS_ORDEM.indexOf(minimo)
+}
+
+export function ehGestao(papel: Papel): boolean {
+  return papel !== 'aluno'
 }
 
 // --- app/schemas/auth.py -----------------------------------------------
@@ -306,6 +305,67 @@ export const NIVEL_DICA_LABEL: Record<number, string> = {
   2: 'Pista conceitual',
   3: 'Pseudocódigo',
   4: 'Solução comentada',
+}
+
+// --- app/schemas/gamificacao.py ------------------------------------------
+export type AvatarCodigo =
+  | 'raposa'
+  | 'coruja'
+  | 'gato'
+  | 'passaro'
+  | 'urso'
+  | 'lobo'
+  | 'tartaruga'
+  | 'esquilo'
+
+export const AVATARES: AvatarCodigo[] = [
+  'raposa',
+  'coruja',
+  'gato',
+  'passaro',
+  'urso',
+  'lobo',
+  'tartaruga',
+  'esquilo',
+]
+
+export const AVATAR_LABEL: Record<AvatarCodigo, string> = {
+  raposa: 'Raposa',
+  coruja: 'Coruja',
+  gato: 'Gato',
+  passaro: 'Pássaro',
+  urso: 'Urso',
+  lobo: 'Lobo',
+  tartaruga: 'Tartaruga',
+  esquilo: 'Esquilo',
+}
+
+export interface PerfilJogoRequest {
+  apelido: string | null
+  avatar_codigo: AvatarCodigo | null
+}
+
+export interface PerfilJogoResponse extends PerfilJogoRequest {
+  aluno_id: string
+}
+
+export interface PontuacaoResponse {
+  aluno_id: string
+  pontos: number
+  sequencia_dias: number
+  maior_sequencia_dias: number
+  ultima_atividade_em: string | null
+}
+
+export interface EmblemaResponse {
+  id: string
+  codigo: string
+  nome: string
+  descricao: string | null
+}
+
+export interface EmblemaConquistadoResponse extends EmblemaResponse {
+  conquistado_em: string
 }
 
 // --- app/schemas/error.py -------------------------------------------------

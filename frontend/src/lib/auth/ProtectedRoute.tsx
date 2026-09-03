@@ -1,31 +1,28 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from './useAuth'
-import { papelAtendeMinimo, type Papel } from '@/lib/api/types'
 import { PageSpinner } from '@/components/ui/Spinner'
+import { useAuth } from './useAuth'
+import type { Papel } from '@/lib/api/types'
+import { papelAtendeMinimo } from '@/lib/api/types'
 
-interface ProtectedRouteProps {
+export function ProtectedRoute({
+  children,
+  papelMinimo,
+}: {
   children: ReactNode
-  /** Papel mínimo exigido na hierarquia (Diretor > Coordenador > Professor
-   * > Aluno) - espelha app/api/deps.py:require_min_role. Omitido = só
-   * exige estar autenticado, qualquer papel serve. */
   papelMinimo?: Papel
-}
-
-/** Bloqueia acesso a rotas que exigem autenticação (e, opcionalmente, um
- * papel mínimo). Nunca esconde só visualmente - sempre redireciona, para
- * que a barra de endereço nunca mostre uma URL "logada" sem sessão
- * válida. */
-export function ProtectedRoute({ children, papelMinimo }: ProtectedRouteProps) {
+}) {
   const { usuario, carregando } = useAuth()
   const location = useLocation()
 
-  if (carregando) {
-    return <PageSpinner label="Carregando sua sessão..." />
-  }
+  if (carregando) return <PageSpinner />
 
   if (!usuario) {
-    return <Navigate to="/login" replace state={{ from: location }} />
+    return <Navigate to="/login" state={{ de: location.pathname }} replace />
+  }
+
+  if (!usuario.is_active) {
+    return <Navigate to="/aguardando-aprovacao" replace />
   }
 
   if (papelMinimo && !papelAtendeMinimo(usuario.papel, papelMinimo)) {

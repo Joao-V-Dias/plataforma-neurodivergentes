@@ -27,4 +27,8 @@ Thumbs.db
 # Redis local (snapshot de persistencia gerado pelo redis-server)
 dump.rdb
 
+# Fotos de perfil enviadas por usuarios (app/foto_perfil) - arquivo local,
+# nunca deve ir para o repositorio.
+uploads/
+
 # Alembic (mantemos as migrations, ignoramos apenas artefatos locais)

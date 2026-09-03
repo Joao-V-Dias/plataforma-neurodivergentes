@@ -1,0 +1,20 @@
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+.checkbox__box {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.checkbox__box[data-state='checked'] { background: var(--accent); border-color: var(--accent); }
+.checkbox__indicator { color: var(--accent-fg); display: flex; }

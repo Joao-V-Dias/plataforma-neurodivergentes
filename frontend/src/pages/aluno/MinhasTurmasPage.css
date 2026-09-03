@@ -1,0 +1,220 @@
+.minhas-turmas__topo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.minhas-turmas__topo h1 { font-family: var(--font-display); font-size: var(--text-h2); font-weight: 700; }
+.minhas-turmas__data {
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+/* Mostrador digital: uma leitura real (nao inventada), no mesmo formato de
+   um contador de painel. */
+.minhas-turmas__leitura {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.4rem var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.minhas-turmas__leitura-valor {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.minhas-turmas__leitura-rotulo {
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+}
+
+/* Aviso de atencao (nao e erro) — a cor mora no medalhao do icone, nunca
+   numa faixa lateral (The Side-Tab Raise: sem borda colorida como acento). */
+.minhas-turmas__nota {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+}
+.minhas-turmas__nota:hover { background: var(--elevated); }
+.minhas-turmas__nota svg:first-child {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0.4rem;
+  border-radius: 999px;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 16%, var(--surface));
+}
+.minhas-turmas__nota span { flex: 1; }
+
+/* Painel de estacoes: preenche a largura do conteudo — sem coluna estreita
+   flutuando no vazio. */
+.minhas-turmas__painel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.minhas-turmas__cabecalho-lista,
+.minhas-turmas__linha {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr) 9rem 8.5rem 4.5rem;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+}
+
+.minhas-turmas__cabecalho-lista {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.minhas-turmas__entrada { border-bottom: 1px solid var(--border-muted); }
+.minhas-turmas__entrada:last-child { border-bottom: none; }
+
+.minhas-turmas__linha {
+  color: var(--text);
+  min-width: 0;
+  transition: background-color var(--motion-fast) var(--motion-ease);
+}
+.minhas-turmas__linha:hover,
+.minhas-turmas__linha:focus-visible { background: var(--elevated); }
+.minhas-turmas__linha:hover .minhas-turmas__nome { color: var(--accent); }
+.minhas-turmas__linha:hover .minhas-turmas__abrir-rotulo,
+.minhas-turmas__linha:focus-visible .minhas-turmas__abrir-rotulo { opacity: 1; }
+.minhas-turmas__linha:hover .minhas-turmas__seta { transform: translateX(3px); color: var(--accent); }
+
+.minhas-turmas__estacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+}
+.minhas-turmas__led {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--border-muted);
+  flex-shrink: 0;
+}
+.minhas-turmas__led[data-ligado='true'] { background: var(--green); }
+
+.minhas-turmas__nome {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-body-lg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.minhas-turmas__periodo {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leitura da estacao: banda de intensidade (o mostrador) acompanhada do
+   rotulo em linguagem simples (The Plain-Name Raise — a cor nunca fala
+   sozinha). */
+.minhas-turmas__leitura-estacao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+.minhas-turmas__banda {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 0.9rem;
+}
+.minhas-turmas__banda-segmento {
+  width: 3px;
+  background: var(--border-muted);
+  border-radius: 1px;
+}
+.minhas-turmas__banda-segmento:nth-child(1) { height: 30%; }
+.minhas-turmas__banda-segmento:nth-child(2) { height: 50%; }
+.minhas-turmas__banda-segmento:nth-child(3) { height: 70%; }
+.minhas-turmas__banda-segmento:nth-child(4) { height: 85%; }
+.minhas-turmas__banda-segmento:nth-child(5) { height: 100%; }
+.minhas-turmas__banda[data-ligado='true'] .minhas-turmas__banda-segmento { background: var(--green); }
+.minhas-turmas__status {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.minhas-turmas__status[data-ligado='true'] { color: var(--green); }
+
+.minhas-turmas__abrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--accent);
+}
+.minhas-turmas__abrir-rotulo {
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--motion-ease);
+}
+.minhas-turmas__seta {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
+}
+
+@media (max-width: 720px) {
+  .minhas-turmas__cabecalho-lista { display: none; }
+  .minhas-turmas__cabecalho-lista,
+  .minhas-turmas__linha {
+    grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+    grid-template-areas: "estacao nome seta" "estacao periodo status";
+    row-gap: 0.2rem;
+  }
+  .minhas-turmas__estacao { grid-area: estacao; align-self: start; }
+  .minhas-turmas__nome { grid-area: nome; white-space: normal; }
+  .minhas-turmas__periodo { grid-area: periodo; }
+  .minhas-turmas__leitura-estacao { grid-area: status; justify-self: end; }
+  .minhas-turmas__abrir { grid-area: seta; align-self: start; }
+}

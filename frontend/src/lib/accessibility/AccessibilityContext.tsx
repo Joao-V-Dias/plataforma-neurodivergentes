@@ -1,15 +1,12 @@
+import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import * as perfisApi from '@/lib/api/perfis'
+  atualizarPreferenciasAcessibilidade,
+  obterPreferenciasAcessibilidade,
+} from '@/lib/api/perfis'
 import type { PreferenciasAcessibilidadeRequest, PreferenciasAcessibilidadeResponse } from '@/lib/api/types'
 import { useAuth } from '@/lib/auth/useAuth'
+
+export type Tema = 'escuro' | 'claro'
 
 const PADRAO: PreferenciasAcessibilidadeRequest = {
   fonte_legivel: false,
@@ -22,98 +19,91 @@ const PADRAO: PreferenciasAcessibilidadeRequest = {
 
 interface AccessibilityContextValue {
   preferencias: PreferenciasAcessibilidadeRequest
+  tema: Tema
+  carregando: boolean
   salvando: boolean
-  salvarPreferencias: (payload: PreferenciasAcessibilidadeRequest) => Promise<void>
-  /** Lê um texto em voz alta via Web Speech API, só quando o usuário tem
-   * `leitura_voz_alta` ativado - usado em botões "ouvir" no enunciado do
-   * problema e no conteúdo das dicas (Parte 6), que costumam ser blocos
-   * longos de texto. */
-  falarTexto: (texto: string) => void
-  pararFala: () => void
-  suportaLeituraEmVoz: boolean
+  atualizar: (patch: Partial<PreferenciasAcessibilidadeRequest>) => Promise<void>
+  alternarTema: () => void
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AccessibilityContext = createContext<AccessibilityContextValue | null>(null)
 
-function aplicarClassesNoDocumento(prefs: PreferenciasAcessibilidadeRequest): void {
+function aplicarAoDocumento(prefs: PreferenciasAcessibilidadeRequest, tema: Tema) {
   const root = document.documentElement
-  root.classList.toggle('a11y-alto-contraste', prefs.alto_contraste)
-  root.classList.toggle('a11y-fonte-legivel', prefs.fonte_legivel)
-  root.classList.toggle('a11y-reduzir-estimulos', prefs.reducao_estimulos)
-
-  root.classList.remove(
-    'a11y-fonte-pequeno',
-    'a11y-fonte-medio',
-    'a11y-fonte-grande',
-    'a11y-fonte-extra_grande',
-  )
-  root.classList.add(`a11y-fonte-${prefs.tamanho_fonte}`)
+  root.dataset.theme = tema === 'claro' ? 'light' : 'dark'
+  root.dataset.fonte = prefs.tamanho_fonte
+  root.dataset.fonteLegivel = String(prefs.fonte_legivel)
+  root.dataset.contraste = prefs.alto_contraste ? 'alto' : 'normal'
+  root.dataset.reduzirEstimulos = String(prefs.reducao_estimulos)
 }
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const { usuario } = useAuth()
-  const queryClient = useQueryClient()
-  const [salvando, setSalvando] = useState(false)
-  const suportaLeituraEmVoz = typeof window !== 'undefined' && 'speechSynthesis' in window
-
-  const { data } = useQuery<PreferenciasAcessibilidadeResponse>({
-    queryKey: ['preferencias-acessibilidade', usuario?.id],
-    queryFn: perfisApi.obterMinhasPreferenciasAcessibilidade,
-    enabled: !!usuario,
-    staleTime: 5 * 60 * 1000,
+  const [preferencias, setPreferencias] = useState<PreferenciasAcessibilidadeRequest>(PADRAO)
+  const [tema, setTema] = useState<Tema>(() => {
+    const salvo = localStorage.getItem('pna.tema')
+    return salvo === 'escuro' ? 'escuro' : 'claro'
   })
-
-  const preferencias = data ?? PADRAO
+  const [carregando, setCarregando] = useState(true)
+  const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-    aplicarClassesNoDocumento(preferencias)
-  }, [preferencias])
+    aplicarAoDocumento(preferencias, tema)
+  }, [preferencias, tema])
 
-  // Ao deslogar, volta tudo ao padrão em vez de manter o alto-contraste
-  // do usuário anterior visível na tela de login do próximo.
   useEffect(() => {
-    if (!usuario) aplicarClassesNoDocumento(PADRAO)
+    if (!usuario) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset síncrono ao deslogar, não busca assíncrona
+      setPreferencias(PADRAO)
+      setCarregando(false)
+      return
+    }
+    let cancelado = false
+    setCarregando(true)
+    obterPreferenciasAcessibilidade()
+      .then((resp: PreferenciasAcessibilidadeResponse) => {
+        if (!cancelado) setPreferencias(resp)
+      })
+      .catch(() => {
+        if (!cancelado) setPreferencias(PADRAO)
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false)
+      })
+    return () => {
+      cancelado = true
+    }
   }, [usuario])
 
-  const salvarPreferencias = useCallback(
-    async (payload: PreferenciasAcessibilidadeRequest) => {
+  const atualizar = useCallback(
+    async (patch: Partial<PreferenciasAcessibilidadeRequest>) => {
+      const proximo = { ...preferencias, ...patch }
+      setPreferencias(proximo)
+      if (!usuario) return
       setSalvando(true)
-      aplicarClassesNoDocumento(payload) // otimista: aplica antes da API confirmar
       try {
-        const atualizado = await perfisApi.atualizarPreferenciasAcessibilidade(payload)
-        queryClient.setQueryData(['preferencias-acessibilidade', usuario?.id], atualizado)
-      } catch (erro) {
-        aplicarClassesNoDocumento(preferencias) // desfaz o otimismo em caso de erro
-        throw erro
+        const resp = await atualizarPreferenciasAcessibilidade(proximo)
+        setPreferencias(resp)
       } finally {
         setSalvando(false)
       }
     },
-    [preferencias, queryClient, usuario],
+    [preferencias, usuario],
   )
 
-  const falarTexto = useCallback(
-    (texto: string) => {
-      if (!suportaLeituraEmVoz || !preferencias.leitura_voz_alta) return
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(texto)
-      utterance.lang = 'pt-BR'
-      window.speechSynthesis.speak(utterance)
-    },
-    [preferencias.leitura_voz_alta, suportaLeituraEmVoz],
+  const alternarTema = useCallback(() => {
+    setTema((atual) => {
+      const proximo = atual === 'escuro' ? 'claro' : 'escuro'
+      localStorage.setItem('pna.tema', proximo)
+      return proximo
+    })
+  }, [])
+
+  const value = useMemo<AccessibilityContextValue>(
+    () => ({ preferencias, tema, carregando, salvando, atualizar, alternarTema }),
+    [preferencias, tema, carregando, salvando, atualizar, alternarTema],
   )
 
-  const pararFala = useCallback(() => {
-    if (suportaLeituraEmVoz) window.speechSynthesis.cancel()
-  }, [suportaLeituraEmVoz])
-
-  const value = useMemo(
-    () => ({ preferencias, salvando, salvarPreferencias, falarTexto, pararFala, suportaLeituraEmVoz }),
-    [preferencias, salvando, salvarPreferencias, falarTexto, pararFala, suportaLeituraEmVoz],
-  )
-
-  return (
-    <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>
-  )
+  return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>
 }

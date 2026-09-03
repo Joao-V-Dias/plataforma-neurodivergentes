@@ -1,40 +1,45 @@
+import { useEffect, useState } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
-import { useState } from 'react'
 import { useAccessibility } from '@/lib/accessibility/useAccessibility'
-import { Button } from './Button'
+import './BotaoOuvir.css'
 
-/** Botão "ouvir" que lê um texto em voz alta (Web Speech API) - só
- * aparece quando o usuário ativou "leitura em voz alta" nas preferências
- * de acessibilidade (Parte 3) e o navegador suporta a API. Usado nos
- * enunciados de problema e no conteúdo das dicas (Parte 6), que tendem a
- * ser blocos longos de texto - ajuda especialmente alunos com dislexia. */
-export function BotaoOuvir({ texto, rotulo }: { texto: string; rotulo: string }) {
-  const { falarTexto, pararFala, preferencias, suportaLeituraEmVoz } = useAccessibility()
+/** Lê `texto` em voz alta via Web Speech API. Só aparece quando a
+ * preferência leitura_voz_alta está ligada (PreferenciasAcessibilidade) -
+ * ver docs/prompt-redesign-frontend.md secção 2.1. */
+export function BotaoOuvir({ texto }: { texto: string }) {
+  const { preferencias } = useAccessibility()
   const [falando, setFalando] = useState(false)
 
-  if (!suportaLeituraEmVoz || !preferencias.leitura_voz_alta) return null
+  useEffect(() => {
+    return () => window.speechSynthesis?.cancel()
+  }, [])
+
+  if (!preferencias.leitura_voz_alta || !('speechSynthesis' in window)) return null
 
   function alternar() {
     if (falando) {
-      pararFala()
+      window.speechSynthesis.cancel()
       setFalando(false)
       return
     }
-    falarTexto(texto)
+    const utterance = new SpeechSynthesisUtterance(texto)
+    utterance.lang = 'pt-BR'
+    utterance.onend = () => setFalando(false)
+    utterance.onerror = () => setFalando(false)
+    window.speechSynthesis.speak(utterance)
     setFalando(true)
-    const utterance = window.speechSynthesis
-    const verificar = setInterval(() => {
-      if (!utterance.speaking) {
-        setFalando(false)
-        clearInterval(verificar)
-      }
-    }, 300)
   }
 
   return (
-    <Button type="button" variant="secondary" onClick={alternar} aria-pressed={falando}>
-      {falando ? <VolumeX className="h-4 w-4" aria-hidden="true" /> : <Volume2 className="h-4 w-4" aria-hidden="true" />}
-      {falando ? `Parar leitura de ${rotulo}` : `Ouvir ${rotulo}`}
-    </Button>
+    <button
+      type="button"
+      className="botao-ouvir"
+      onClick={alternar}
+      aria-pressed={falando}
+      aria-label={falando ? 'Parar leitura em voz alta' : 'Ouvir este texto'}
+    >
+      {falando ? <VolumeX size={14} /> : <Volume2 size={14} />}
+      {falando ? 'Parar' : 'Ouvir'}
+    </button>
   )
 }

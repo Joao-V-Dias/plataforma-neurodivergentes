@@ -15,7 +15,7 @@ from app.models.submissao import StatusSubmissao, Submissao, SubmissaoResultado
 from app.models.usuario import Usuario
 from app.repositories import problema_repository, submissao_repository
 from app.sandbox.executor import StatusExecucao, executar
-from app.services import audit, dica_service
+from app.services import audit, dica_service, emblema_service, pontuacao_service
 
 # Prioridade de agravamento: a submissao herda o pior status dentre todos
 # os casos de teste (ex: um caso com erro_interno "contamina" a submissao
@@ -114,6 +114,28 @@ async def submeter(
             aluno_id=aluno.id,
             submissao_criado_em=submissao.criado_em,
         )
+
+    # Gamificacao (avatar/pontuacao/emblemas): qualquer submissao conta
+    # para a sequencia de dias ativos, pontos so na primeira vez que o
+    # problema e resolvido. Roda na mesma transacao da submissao (nenhum
+    # service aqui chama commit - ver app/core/database.py:get_db) para
+    # nunca ficar dessincronizada dela.
+    resultado_pontuacao = await pontuacao_service.registrar_submissao(
+        db,
+        aluno_id=aluno.id,
+        problema_id=problema.id,
+        submissao_id=submissao.id,
+        nivel_dificuldade=problema.nivel_dificuldade,
+        status=status_geral,
+        data_atividade=submissao.criado_em.date(),
+    )
+    await emblema_service.avaliar_e_conceder(
+        db,
+        aluno_id=aluno.id,
+        pontuacao=resultado_pontuacao.pontuacao,
+        resolveu_problema_novo=resultado_pontuacao.resolveu_problema_novo,
+        total_resolvidos=resultado_pontuacao.total_resolvidos,
+    )
 
     return SubmissaoDetalhada(
         submissao=submissao, resultados=resultados, casos_por_id={c.id: c for c in casos}

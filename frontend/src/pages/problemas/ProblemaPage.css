@@ -1,0 +1,79 @@
+.problema-pagina__topo { margin-bottom: var(--space-5); }
+.problema-pagina__topo h1 { font-size: var(--text-h2); font-weight: 700; }
+.problema-pagina__badges { display: flex; gap: var(--space-2); margin-top: var(--space-2); flex-wrap: wrap; }
+
+.problema-pagina__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .problema-pagina__grid { grid-template-columns: 1fr; }
+}
+
+.problema-pagina__formato { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); flex-wrap: wrap; }
+.problema-pagina__formato-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+.problema-pagina__formato-botao[data-ativo='true'] { color: var(--text); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.problema-pagina__ouvir { margin-bottom: var(--space-3); }
+.problema-pagina__texto { font-size: var(--text-body); white-space: pre-wrap; line-height: var(--leading-body); }
+
+.problema-pagina__casos-publicos { margin-top: var(--space-5); }
+.problema-pagina__casos-publicos h2 { font-size: var(--text-body-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); margin-bottom: var(--space-2); }
+.problema-pagina__caso-exemplo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-code);
+}
+
+.problema-pagina__formato-pendente {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+  background: var(--surface);
+}
+.problema-pagina__formato-pendente svg { color: var(--text-muted); flex-shrink: 0; margin-top: 2px; }
+
+.problema-pagina__codigo { display: flex; flex-direction: column; gap: var(--space-3); }
+.problema-pagina__acoes-codigo { display: flex; align-items: center; gap: var(--space-3); }
+.problema-pagina__executando { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--text-body-sm); }
+
+.problema-pagina__resultado { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-2); }
+.problema-pagina__resultado-cabecalho { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-body-sm); color: var(--text-secondary); }
+
+.problema-pagina__lista-submissoes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); max-width: 32rem; }
+.problema-pagina__lista-submissoes li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  background: var(--surface);
+}
+.problema-pagina__submissao-tempo { margin-left: auto; }

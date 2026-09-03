@@ -1,22 +1,23 @@
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { Link } from 'react-router-dom'
+import { z } from 'zod'
 import { AuthLayout } from './AuthLayout'
-import { InputField } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { Alert } from '@/components/ui/Alert'
-import * as authApi from '@/lib/api/auth'
-import { mensagemDeErro } from '@/lib/api/errors'
+import { Field } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Input'
+import { esqueciSenha } from '@/lib/api/auth'
+import { paraErroApi } from '@/lib/api/errors'
 import { emailSchema } from '@/lib/validation'
 
 const schema = z.object({ email: emailSchema })
 type FormValues = z.infer<typeof schema>
 
 export function ForgotPasswordPage() {
+  const [mensagem, setMensagem] = useState<string | null>(null)
   const [erroGeral, setErroGeral] = useState<string | null>(null)
-  const [resultado, setResultado] = useState<{ mensagem: string; token: string | null } | null>(null)
+  const [tokenDev, setTokenDev] = useState<string | null>(null)
 
   const {
     register,
@@ -26,45 +27,44 @@ export function ForgotPasswordPage() {
 
   async function onSubmit(values: FormValues) {
     setErroGeral(null)
+    setMensagem(null)
     try {
-      const resp = await authApi.esqueciSenha(values.email)
-      setResultado({ mensagem: resp.message, token: resp.reset_token })
+      const resp = await esqueciSenha(values.email)
+      setMensagem(resp.message)
+      setTokenDev(resp.reset_token)
     } catch (erro) {
-      setErroGeral(mensagemDeErro(erro))
+      setErroGeral(paraErroApi(erro).message)
     }
   }
 
   return (
-    <AuthLayout title="Esqueci minha senha" subtitle="Informe seu e-mail para receber o link de redefinição.">
-      {resultado ? (
-        <div className="flex flex-col gap-4">
-          <Alert tone="success">{resultado.mensagem}</Alert>
-          {resultado.token && (
-            <Alert tone="info">
-              Ambiente sem envio de e-mail configurado - use o link abaixo para redefinir agora:
-              <br />
-              <Link
-                to={`/redefinir-senha?token=${encodeURIComponent(resultado.token)}`}
-                className="font-medium underline"
-              >
-                Redefinir minha senha
-              </Link>
-            </Alert>
+    <AuthLayout
+      titulo="Esqueci minha senha"
+      subtitulo="Enviaremos um link de redefinição para o seu e-mail, se ele estiver cadastrado."
+      rodape={<Link to="/login">Voltar para o login</Link>}
+    >
+      {mensagem ? (
+        <div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body-sm)' }}>{mensagem}</p>
+          {tokenDev && (
+            <p style={{ fontSize: 'var(--text-caption)', color: 'var(--text-muted)', marginTop: 'var(--space-3)' }}>
+              Ambiente de desenvolvimento — token: <Link to={`/redefinir-senha?token=${tokenDev}`}>{tokenDev}</Link>
+            </p>
           )}
-          <Link to="/login" className="text-center text-sm text-[var(--color-primary)] hover:underline">
-            Voltar para o login
-          </Link>
         </div>
       ) : (
-        <form className="flex flex-col gap-4" onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
-          {erroGeral && <Alert tone="danger">{erroGeral}</Alert>}
-          <InputField label="E-mail" type="email" autoComplete="email" erro={errors.email?.message} {...register('email')} />
-          <Button type="submit" carregando={isSubmitting} className="mt-2 justify-center">
-            Enviar link de redefinição
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <Field label="E-mail" htmlFor="email" erro={errors.email?.message} obrigatorio>
+            <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
+          </Field>
+          {erroGeral && (
+            <p className="field__erro" role="alert">
+              {erroGeral}
+            </p>
+          )}
+          <Button type="submit" carregando={isSubmitting} style={{ width: '100%', marginTop: 'var(--space-2)' }}>
+            Enviar link
           </Button>
-          <Link to="/login" className="text-center text-sm text-[var(--color-primary)] hover:underline">
-            Voltar para o login
-          </Link>
         </form>
       )}
     </AuthLayout>

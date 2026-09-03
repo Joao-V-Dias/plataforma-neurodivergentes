@@ -2,6 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import {
   limparTokens,
   obterAccessToken,
+  obterAccessTokenExpiresAt,
   obterRefreshToken,
   salvarTokens,
 } from './tokenStorage'
@@ -10,11 +11,6 @@ import type { TokenResponse } from './types'
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://127.0.0.1:8000/api/v1'
 
-/** Chamado pelo AuthProvider quando a sessão não pode mais ser renovada
- * (refresh token ausente/expirado/revogado) - limpa o estado de auth e
- * manda o usuário de volta para o login. Indireção via callback em vez de
- * importar o router aqui, para o cliente HTTP não depender da árvore de
- * componentes React. */
 let onSessaoExpirada: (() => void) | null = null
 export function registrarCallbackSessaoExpirada(cb: () => void): void {
   onSessaoExpirada = cb
@@ -25,8 +21,8 @@ export const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Instância separada, sem interceptors, só para o próprio /auth/refresh -
-// evita loop infinito (um 401 do refresh não pode tentar se auto-renovar).
+// Instância separada, sem interceptors, só para /auth/refresh - evita loop
+// infinito (um 401 do próprio refresh não pode tentar se auto-renovar).
 const refreshClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -40,12 +36,10 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
-// Dedupe: se várias requisições tomam 401 ao mesmo tempo (ex: um dashboard
-// disparando 3 chamadas em paralelo com o access token vencido), só uma
-// chamada de /auth/refresh deve sair - as outras esperam a mesma promise.
+// Dedupe: se várias chamadas tomam 401 ao mesmo tempo, só uma renovação sai.
 let refreshEmAndamento: Promise<string> | null = null
 
-async function renovarAccessToken(): Promise<string> {
+export async function renovarAccessToken(): Promise<string> {
   if (refreshEmAndamento) return refreshEmAndamento
 
   const refreshToken = obterRefreshToken()
@@ -68,6 +62,28 @@ async function renovarAccessToken(): Promise<string> {
     })
 
   return refreshEmAndamento
+}
+
+/** Garante um access token com folga de validade antes de um uso que não
+ * passa pelo interceptor de 401 do apiClient (ex: handshake de WebSocket,
+ * que não tem como reagir a uma rejeição e tentar de novo). Renova
+ * proativamente se faltar pouco (ou já tiver expirado); retorna null se não
+ * houver sessão ou a renovação falhar. */
+export async function garantirAccessTokenValido(): Promise<string | null> {
+  const token = obterAccessToken()
+  if (!token) return null
+
+  const expiraEm = obterAccessTokenExpiresAt()
+  const folgaMs = 15_000
+  if (expiraEm && new Date(expiraEm).getTime() - Date.now() > folgaMs) {
+    return token
+  }
+
+  try {
+    return await renovarAccessToken()
+  } catch {
+    return null
+  }
 }
 
 interface RequisicaoComRetry extends InternalAxiosRequestConfig {

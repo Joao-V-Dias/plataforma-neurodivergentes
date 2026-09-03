@@ -1,25 +1,24 @@
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { z } from 'zod'
 import { AuthLayout } from './AuthLayout'
-import { InputField } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { Alert } from '@/components/ui/Alert'
-import * as authApi from '@/lib/api/auth'
-import { mensagemDeErro } from '@/lib/api/errors'
+import { Field } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Input'
+import { redefinirSenha } from '@/lib/api/auth'
+import { paraErroApi } from '@/lib/api/errors'
 import { senhaSchema } from '@/lib/validation'
 
-const schema = z.object({ nova_senha: senhaSchema })
+const schema = z.object({ senha: senhaSchema })
 type FormValues = z.infer<typeof schema>
 
 export function ResetPasswordPage() {
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token') ?? ''
+  const [params] = useSearchParams()
+  const token = params.get('token') ?? ''
   const navigate = useNavigate()
   const [erroGeral, setErroGeral] = useState<string | null>(null)
-  const [sucesso, setSucesso] = useState(false)
 
   const {
     register,
@@ -30,50 +29,47 @@ export function ResetPasswordPage() {
   async function onSubmit(values: FormValues) {
     setErroGeral(null)
     try {
-      await authApi.redefinirSenha(token, values.nova_senha)
-      setSucesso(true)
+      await redefinirSenha(token, values.senha)
+      navigate('/login', { replace: true, state: { redefinida: true } })
     } catch (erro) {
-      setErroGeral(mensagemDeErro(erro))
+      setErroGeral(paraErroApi(erro).message)
     }
   }
 
   if (!token) {
     return (
-      <AuthLayout title="Link inválido">
-        <Alert tone="danger">
-          Este link de redefinição de senha está incompleto. Solicite um novo link.
-        </Alert>
-        <Link to="/esqueci-senha" className="mt-4 block text-center text-sm text-[var(--color-primary)] hover:underline">
-          Solicitar novo link
-        </Link>
-      </AuthLayout>
-    )
-  }
-
-  if (sucesso) {
-    return (
-      <AuthLayout title="Senha redefinida!">
-        <Alert tone="success">Sua senha foi alterada com sucesso.</Alert>
-        <Button className="mt-4 w-full justify-center" onClick={() => navigate('/login')}>
-          Ir para o login
-        </Button>
+      <AuthLayout titulo="Link inválido" rodape={<Link to="/esqueci-senha">Solicitar novo link</Link>}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body-sm)' }}>
+          Este link de redefinição de senha está incompleto ou expirou.
+        </p>
       </AuthLayout>
     )
   }
 
   return (
-    <AuthLayout title="Redefinir senha" subtitle="Escolha uma nova senha para sua conta.">
-      <form className="flex flex-col gap-4" onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
-        {erroGeral && <Alert tone="danger">{erroGeral}</Alert>}
-        <InputField
+    <AuthLayout titulo="Redefinir senha">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Field
           label="Nova senha"
-          type="password"
-          autoComplete="new-password"
-          ajuda="Mínimo 8 caracteres, com pelo menos uma letra e um número."
-          erro={errors.nova_senha?.message}
-          {...register('nova_senha')}
-        />
-        <Button type="submit" carregando={isSubmitting} className="mt-2 justify-center">
+          htmlFor="senha"
+          erro={errors.senha?.message}
+          obrigatorio
+          dica="Mínimo 8 caracteres, com letra maiúscula, minúscula e número."
+        >
+          <Input
+            id="senha"
+            type="password"
+            autoComplete="new-password"
+            aria-invalid={!!errors.senha}
+            {...register('senha')}
+          />
+        </Field>
+        {erroGeral && (
+          <p className="field__erro" role="alert">
+            {erroGeral}
+          </p>
+        )}
+        <Button type="submit" carregando={isSubmitting} style={{ width: '100%', marginTop: 'var(--space-2)' }}>
           Redefinir senha
         </Button>
       </form>

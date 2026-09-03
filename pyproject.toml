@@ -21,6 +21,8 @@ dependencies = [
     "groq>=0.13.0",
     "prometheus-fastapi-instrumentator>=7.0.0",
     "sentry-sdk>=2.0.0",
+    "python-multipart>=0.0.12",
+    "pillow>=10.4.0",
 ]
 
 [project.optional-dependencies]

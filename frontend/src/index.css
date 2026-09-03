@@ -1,78 +1,162 @@
-@import 'tailwindcss';
-
 /*
- * Tokens de design. Os valores de fonte/contraste/espaçamento aqui são a
- * base "padrão"; o AccessibilityProvider (src/lib/accessibility) sobrescreve
- * um subconjunto deles via classes no <html> a partir das preferências
- * salvas do usuário (PreferenciasAcessibilidade, Parte 3 do backend).
+ * Tokens de design — Estacao de Leitura (console de instrumentacao).
+ * Claro é o tema padrão do produto — painel tecnico claro, tinta quase-preta,
+ * um ciano de sinal reservado para leitura/acao primaria, ambar para
+ * atencao/sequencia, um unico vermelho para estado critico.
+ * [data-theme="dark"] é a leitura "de painel" do mesmo mundo — mesmos papeis
+ * de cor, fundo de console escuro.
+ * [data-contraste="alto"] é uma camada independente do tema, ligada por
+ * PreferenciasAcessibilidade.alto_contraste (dado de saúde do usuário,
+ * não decisão estética) — preto/branco puro, sem meio-tom.
  */
+
+@font-face {
+  font-family: 'JetBrains Mono Local';
+  src: local('JetBrains Mono');
+}
+
 :root {
-  /* --color-bg é o branco dos cartões/painéis; a PÁGINA usa --color-surface
-     por baixo (ver `body` abaixo) - é esse contraste sutil entre os dois
-     que separa um cartão do fundo, então a borda pode ser quase invisível
-     em vez de fazer todo o trabalho sozinha (a causa mais comum de UI
-     "pesada": bordas fortes tentando compensar a falta desse contraste). */
-  --color-bg: #ffffff;
-  --color-fg: #26263a;
-  --color-muted: #6b6b7d;
-  --color-border: #e9e9f1;
-  --color-primary: #4338ca;
-  --color-primary-fg: #ffffff;
-  --color-primary-hover: #3730a3;
-  --color-primary-soft: #eef0fc;
-  --color-danger: #b91c1c;
-  --color-danger-bg: #fef2f2;
-  --color-success: #15803d;
-  --color-success-bg: #f0fdf4;
-  --color-warning: #92400e;
-  --color-warning-bg: #fffbeb;
-  --color-surface: #f6f6fa;
-  --radius: 0.625rem;
+  --font-sans: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'IBM Plex Sans', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'JetBrains Mono Local', 'Fira Code', ui-monospace, monospace;
+
+  --text-display: 2.875rem;
+  --text-h1: 2.25rem;
+  --text-h2: 1.75rem;
+  --text-h3: 1.375rem;
+  --text-h4: 1.125rem;
+  --text-body-lg: 1.125rem;
+  --text-body: 1rem;
+  --text-body-sm: 0.875rem;
+  --text-caption: 0.75rem;
+  --text-code: 0.9375rem;
+  --leading-body: 1.6;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3rem;
+
+  /* Raio pequeno e consistente — nem cortado, nem em pilula; so' pecas
+     genuinamente redondas (LED, avatar, marcador de gauge) usam 999px. */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+
   --font-scale: 1;
-  --motion-duration: 150ms;
+  --motion-fast: 120ms;
+  --motion: 180ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Tema claro — painel sob luz de sala (padrão) */
+  --bg: #eef1f3;
+  --surface: #e2e7ea;
+  --elevated: #d3dade;
+  --border: #7c93a0;
+  --border-muted: #b7c3c9;
+
+  --text: #131f26;
+  --text-secondary: #435661;
+  --text-muted: #56636b;
+
+  /* Ciano de sinal — a unica cor operacional (leitura ativa, acao, foco) */
+  --accent: #17708f;
+  --accent-fg: #f2f7f8;
+  /* Vermelho critico — reservado a erro/estado destrutivo */
+  --red: #a8362a;
+  /* Verde de leitura aprovada (submissao aceita) */
+  --green: #1c744a;
+  /* Ambar — sequencia/atencao, nunca estado de erro */
+  --amber: #96590a;
+
+  /* Conjunto decorativo (identidade de avatar/estacao — nunca estado) */
+  --pink: #8a4a7e;
+  --cyan: #2d5f8c;
+  --orange: #b0530f;
+  --yellow: #8a7a12;
+
+  --link: var(--accent);
+  --focus-ring: var(--accent);
+  --selection-bg: #bfe0ea;
 }
 
-/* Alto contraste (WCAG AAA-leaning): usado quando
-   preferencias.alto_contraste === true. */
-html.a11y-alto-contraste {
-  --color-bg: #000000;
-  --color-fg: #ffffff;
-  --color-muted: #e5e5e5;
-  --color-border: #ffffff;
-  --color-primary: #ffd400;
-  --color-primary-fg: #000000;
-  --color-primary-hover: #ffe14d;
-  --color-primary-soft: #332b00;
-  --color-danger: #ff6b6b;
-  --color-danger-bg: #2b0000;
-  --color-success: #6bff8f;
-  --color-success-bg: #002b0d;
-  --color-warning: #ffd400;
-  --color-warning-bg: #2b2100;
-  --color-surface: #0d0d0d;
+[data-theme='dark'] {
+  /* Tema escuro — console de instrumentacao sob luz de painel. */
+  --bg: #0c1922;
+  --surface: #12222d;
+  --elevated: #1a2f3c;
+  --border: #3a5563;
+  --border-muted: #223541;
+
+  --text: #e8eef1;
+  --text-secondary: #9fb2bc;
+  --text-muted: #7995a1;
+
+  --accent: #3fb0d4;
+  --accent-fg: #0a1116;
+  --red: #ef6355;
+  --green: #52d190;
+  --amber: #f0ab4a;
+
+  --pink: #c98fc0;
+  --cyan: #6fa8d1;
+  --orange: #e2894a;
+  --yellow: #d6c25a;
+
+  --link: var(--accent);
+  --focus-ring: var(--accent);
+  --selection-bg: #234454;
 }
 
-/* Tamanho de fonte adaptativo (PreferenciasAcessibilidade.tamanho_fonte):
-   escala tudo via rem, então o layout inteiro respira junto. */
-html.a11y-fonte-pequeno {
-  --font-scale: 0.9;
-}
-html.a11y-fonte-medio {
-  --font-scale: 1;
-}
-html.a11y-fonte-grande {
-  --font-scale: 1.2;
-}
-html.a11y-fonte-extra_grande {
-  --font-scale: 1.45;
+[data-contraste='alto'] {
+  --bg: #000000;
+  --surface: #060606;
+  --elevated: #111111;
+  --border: #ffffff;
+  --border-muted: #999999;
+  --text: #ffffff;
+  --text-secondary: #eaeaea;
+  --text-muted: #cfcfcf;
+  --accent: #ffd400;
+  --accent-fg: #000000;
+  --red: #ff6b57;
+  --green: #6bffb0;
+  --amber: #ffd400;
+  --link: #ffd400;
+  --focus-ring: #ffd400;
 }
 
-/* Redução de estímulos: some com toda animação/transição, mesmo as que a
-   media query prefers-reduced-motion do SO não capturaria (o usuário pode
-   ligar isso na plataforma sem mudar a config do sistema operacional). */
-html.a11y-reduzir-estimulos *,
-html.a11y-reduzir-estimulos *::before,
-html.a11y-reduzir-estimulos *::after {
+[data-contraste='alto'][data-theme='dark'] {
+  --bg: #000000;
+  --surface: #000000;
+  --elevated: #0d0d0d;
+  --border: #ffffff;
+  --border-muted: #666666;
+  --text: #ffffff;
+  --text-secondary: #eaeaea;
+  --text-muted: #cfcfcf;
+  --accent: #66d9ff;
+  --accent-fg: #000000;
+  --link: #66d9ff;
+  --focus-ring: #66d9ff;
+}
+
+/* Escala de fonte adaptativa (PreferenciasAcessibilidade.tamanho_fonte). */
+[data-fonte='pequeno'] { --font-scale: 0.9; }
+[data-fonte='medio'] { --font-scale: 1; }
+[data-fonte='grande'] { --font-scale: 1.18; }
+[data-fonte='extra_grande'] { --font-scale: 1.4; }
+
+/* Redução de estímulos: desliga toda animação/transição mesmo quando o SO
+   não sinaliza prefers-reduced-motion (o usuário pode ligar isso só na
+   plataforma). */
+[data-reduzir-estimulos='true'] *,
+[data-reduzir-estimulos='true'] *::before,
+[data-reduzir-estimulos='true'] *::after {
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
@@ -80,85 +164,70 @@ html.a11y-reduzir-estimulos *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root {
-    --motion-duration: 0ms;
-  }
+  :root { --motion: 0ms; --motion-fast: 0ms; }
 }
+
+*, *::before, *::after { box-sizing: border-box; }
 
 html {
   font-size: calc(16px * var(--font-scale));
+  color-scheme: light;
+}
+[data-theme='dark'] html,
+html[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 body {
-  /* Fundo da página em --color-surface (não --color-bg, que é o branco
-     dos cartões) - o leve contraste entre os dois é o que dá profundidade
-     ao layout sem precisar de bordas ou sombras fortes. */
-  background-color: var(--color-surface);
-  color: var(--color-fg);
-  font-family:
-    'Atkinson Hyperlegible',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  margin: 0;
   min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Fonte legível (PreferenciasAcessibilidade.fonte_legivel): aumenta o
-   espaçamento entre letras/linhas, o que ajuda especificamente leitores
-   com dislexia (recomendação British Dyslexia Association). */
-html.a11y-fonte-legivel body {
-  letter-spacing: 0.02em;
-  line-height: 1.7;
-  word-spacing: 0.05em;
+/* Fonte legível (dislexia — recomendação British Dyslexia Association). */
+[data-fonte-legivel='true'] body {
+  letter-spacing: 0.015em;
+  line-height: 1.8;
+  word-spacing: 0.06em;
 }
 
-/* Foco visível SEMPRE - nunca `outline: none` sem substituto em nenhum
-   componente. Critério WCAG 2.4.7. */
+h1, h2, h3, h4 { font-family: var(--font-display); }
+h1, h2, h3, h4, p, figure { margin: 0; }
+
+img, svg { display: block; max-width: 100%; }
+
+a { color: var(--link); }
+
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
+
+::selection { background: var(--selection-bg); }
+
+/* Foco visível sempre — WCAG 2.4.7. Nunca outline:none sem substituto. */
 :focus-visible {
-  outline: 3px solid var(--color-primary);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  border-radius: 2px;
 }
 
-html.a11y-alto-contraste :focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 3px;
-}
-
-/* Sombras suaves não têm contraste nenhum contra um fundo preto - no modo
-   alto contraste, cartões voltam a usar borda sólida para se separar do
-   fundo (index.css:Card não aplica borda por padrão, só sombra). */
-html.a11y-alto-contraste [data-card] {
-  border: 1px solid var(--color-border);
-  box-shadow: none;
-}
-html.a11y-alto-contraste [data-badge] {
-  border: 1px solid currentColor;
-}
-html.a11y-alto-contraste [data-button] {
-  border: 1px solid var(--color-border);
-}
-
-/* Link para pular a navegação e ir direto ao conteúdo - primeiro elemento
-   focável de toda página (critério WCAG 2.4.1). */
 .skip-link {
   position: absolute;
   left: -9999px;
   top: 0;
-  z-index: 100;
-  padding: 0.75rem 1.25rem;
-  background: var(--color-primary);
-  color: var(--color-primary-fg);
-  font-weight: 600;
-  border-radius: 0 0 0.5rem 0;
+  z-index: 200;
+  padding: var(--space-3) var(--space-4);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 700;
 }
-.skip-link:focus {
-  left: 0;
-}
+.skip-link:focus { left: 0; }
 
-/* Utilitário visually-hidden (texto só para leitor de tela). */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -170,3 +239,11 @@ html.a11y-alto-contraste [data-button] {
   white-space: nowrap;
   border: 0;
 }
+
+/* Scrollbar discreta (Firefox + WebKit) — some some, não decoração. */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-sm); }
+*::-webkit-scrollbar-track { background: transparent; }
+
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }

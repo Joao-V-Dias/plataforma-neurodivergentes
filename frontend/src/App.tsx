@@ -1,53 +1,72 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { AppShell } from '@/components/layout/AppShell'
-import { ProtectedRoute } from '@/lib/auth/ProtectedRoute'
+import { AlunoShell } from '@/components/layout/AlunoShell'
+import { GestaoShell } from '@/components/layout/GestaoShell'
 import { PageSpinner } from '@/components/ui/Spinner'
+import { AguardandoAprovacaoPage } from '@/pages/auth/AguardandoAprovacaoPage'
+import { CadastroEnviadoPage } from '@/pages/auth/CadastroEnviadoPage'
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
-import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage'
-import { DashboardPage } from '@/pages/DashboardPage'
 import { NaoAutorizadoPage } from '@/pages/NaoAutorizadoPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { ProtectedRoute } from '@/lib/auth/ProtectedRoute'
+import { useAuth } from '@/lib/auth/useAuth'
 import type { Papel } from '@/lib/api/types'
 
-// Code-split o resto das páginas: o editor de código (CodeMirror) e as
-// primitivas Radix usadas nas telas de gestão são o grosso do bundle -
-// nenhuma delas precisa estar no chunk inicial (tela de login).
-const UsuariosListPage = lazy(() =>
-  import('@/pages/usuarios/UsuariosListPage').then((m) => ({ default: m.UsuariosListPage })),
+const OnboardingPage = lazy(() => import('@/pages/onboarding/OnboardingPage').then((m) => ({ default: m.OnboardingPage })))
+const MinhasTurmasPage = lazy(() => import('@/pages/aluno/MinhasTurmasPage').then((m) => ({ default: m.MinhasTurmasPage })))
+const MapaDoJogoPage = lazy(() => import('@/pages/aluno/MapaDoJogoPage').then((m) => ({ default: m.MapaDoJogoPage })))
+const ProblemaPage = lazy(() => import('@/pages/problemas/ProblemaPage').then((m) => ({ default: m.ProblemaPage })))
+const MeuProgressoPage = lazy(() => import('@/pages/aluno/MeuProgressoPage').then((m) => ({ default: m.MeuProgressoPage })))
+const AgendaPage = lazy(() => import('@/pages/aluno/AgendaPage').then((m) => ({ default: m.AgendaPage })))
+const BatalhaPage = lazy(() => import('@/pages/aluno/BatalhaPage').then((m) => ({ default: m.BatalhaPage })))
+const PerfilPage = lazy(() => import('@/pages/aluno/PerfilPage').then((m) => ({ default: m.PerfilPage })))
+
+const DashboardTurmasPage = lazy(() => import('@/pages/gestao/DashboardTurmasPage').then((m) => ({ default: m.DashboardTurmasPage })))
+const TurmaDetalhePage = lazy(() => import('@/pages/gestao/TurmaDetalhePage').then((m) => ({ default: m.TurmaDetalhePage })))
+const FilaAprovacaoPage = lazy(() => import('@/pages/gestao/FilaAprovacaoPage').then((m) => ({ default: m.FilaAprovacaoPage })))
+const UsuariosPage = lazy(() => import('@/pages/gestao/UsuariosPage').then((m) => ({ default: m.UsuariosPage })))
+const ProblemasBancoPage = lazy(() => import('@/pages/gestao/ProblemasBancoPage').then((m) => ({ default: m.ProblemasBancoPage })))
+const NovoProblemaPage = lazy(() => import('@/pages/gestao/NovoProblemaPage').then((m) => ({ default: m.NovoProblemaPage })))
+const ProblemaGestaoDetalhePage = lazy(() =>
+  import('@/pages/gestao/ProblemaGestaoDetalhePage').then((m) => ({ default: m.ProblemaGestaoDetalhePage })),
 )
-const MeuPerfilPage = lazy(() =>
-  import('@/pages/perfil/MeuPerfilPage').then((m) => ({ default: m.MeuPerfilPage })),
-)
-const AcessibilidadePage = lazy(() =>
-  import('@/pages/perfil/AcessibilidadePage').then((m) => ({ default: m.AcessibilidadePage })),
-)
-const TurmasPage = lazy(() =>
-  import('@/pages/turmas/TurmasPage').then((m) => ({ default: m.TurmasPage })),
-)
-const TurmaDetalhePage = lazy(() =>
-  import('@/pages/turmas/TurmaDetalhePage').then((m) => ({ default: m.TurmaDetalhePage })),
-)
-const ProblemasPage = lazy(() =>
-  import('@/pages/problemas/ProblemasPage').then((m) => ({ default: m.ProblemasPage })),
-)
-const NovoProblemaPage = lazy(() =>
-  import('@/pages/problemas/NovoProblemaPage').then((m) => ({ default: m.NovoProblemaPage })),
-)
-const ProblemaDetalhePage = lazy(() =>
-  import('@/pages/problemas/ProblemaDetalhePage').then((m) => ({ default: m.ProblemaDetalhePage })),
+const PainelDicasAlunoPage = lazy(() =>
+  import('@/pages/gestao/PainelDicasAlunoPage').then((m) => ({ default: m.PainelDicasAlunoPage })),
 )
 
-function Protegida({ children, papelMinimo }: { children: ReactNode; papelMinimo?: Papel }) {
+function ProtegidaAluno({ children }: { children: ReactNode }) {
   return (
-    <ProtectedRoute papelMinimo={papelMinimo}>
-      <AppShell>
+    <ProtectedRoute>
+      <AlunoShell>
         <Suspense fallback={<PageSpinner />}>{children}</Suspense>
-      </AppShell>
+      </AlunoShell>
     </ProtectedRoute>
   )
+}
+
+function ProtegidaGestao({ children, papelMinimo }: { children: ReactNode; papelMinimo?: Papel }) {
+  return (
+    <ProtectedRoute papelMinimo={papelMinimo ?? 'professor'}>
+      <GestaoShell>
+        <Suspense fallback={<PageSpinner />}>{children}</Suspense>
+      </GestaoShell>
+    </ProtectedRoute>
+  )
+}
+
+function Home() {
+  const { usuario } = useAuth()
+  if (usuario?.papel === 'aluno') {
+    return (
+      <ProtegidaAluno>
+        <MinhasTurmasPage />
+      </ProtegidaAluno>
+    )
+  }
+  return <Navigate to="/gestao" replace />
 }
 
 export default function App() {
@@ -55,39 +74,135 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<RegisterPage />} />
+      <Route path="/cadastro-enviado" element={<CadastroEnviadoPage />} />
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+      <Route path="/aguardando-aprovacao" element={<AguardandoAprovacaoPage />} />
 
-      <Route path="/" element={<Protegida><DashboardPage /></Protegida>} />
-      <Route path="/turmas" element={<Protegida><TurmasPage /></Protegida>} />
+      <Route path="/" element={<Home />} />
       <Route
-        path="/turmas/:turmaId"
+        path="/onboarding"
         element={
-          <Protegida papelMinimo="professor">
+          <ProtectedRoute>
+            <Suspense fallback={<PageSpinner />}>
+              <OnboardingPage />
+            </Suspense>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/turmas/:turmaId/mapa"
+        element={
+          <ProtegidaAluno>
+            <MapaDoJogoPage />
+          </ProtegidaAluno>
+        }
+      />
+      <Route
+        path="/turmas/:turmaId/problemas/:problemaId"
+        element={
+          <ProtegidaAluno>
+            <ProblemaPage />
+          </ProtegidaAluno>
+        }
+      />
+      <Route
+        path="/turmas/:turmaId/progresso"
+        element={
+          <ProtegidaAluno>
+            <MeuProgressoPage />
+          </ProtegidaAluno>
+        }
+      />
+      <Route
+        path="/agenda"
+        element={
+          <ProtegidaAluno>
+            <AgendaPage />
+          </ProtegidaAluno>
+        }
+      />
+      <Route
+        path="/batalha"
+        element={
+          <ProtegidaAluno>
+            <BatalhaPage />
+          </ProtegidaAluno>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <ProtegidaAluno>
+            <PerfilPage />
+          </ProtegidaAluno>
+        }
+      />
+
+      <Route
+        path="/gestao"
+        element={
+          <ProtegidaGestao>
+            <DashboardTurmasPage />
+          </ProtegidaGestao>
+        }
+      />
+      <Route
+        path="/gestao/turmas/:turmaId"
+        element={
+          <ProtegidaGestao>
             <TurmaDetalhePage />
-          </Protegida>
+          </ProtegidaGestao>
         }
       />
-      <Route path="/problemas" element={<Protegida><ProblemasPage /></Protegida>} />
       <Route
-        path="/problemas/novo"
+        path="/gestao/aprovacoes"
         element={
-          <Protegida papelMinimo="professor">
+          <ProtegidaGestao>
+            <FilaAprovacaoPage />
+          </ProtegidaGestao>
+        }
+      />
+      <Route
+        path="/gestao/usuarios"
+        element={
+          <ProtegidaGestao>
+            <UsuariosPage />
+          </ProtegidaGestao>
+        }
+      />
+      <Route
+        path="/gestao/problemas"
+        element={
+          <ProtegidaGestao>
+            <ProblemasBancoPage />
+          </ProtegidaGestao>
+        }
+      />
+      <Route
+        path="/gestao/problemas/novo"
+        element={
+          <ProtegidaGestao>
             <NovoProblemaPage />
-          </Protegida>
+          </ProtegidaGestao>
         }
       />
-      <Route path="/problemas/:problemaId" element={<Protegida><ProblemaDetalhePage /></Protegida>} />
       <Route
-        path="/usuarios"
+        path="/gestao/problemas/:problemaId"
         element={
-          <Protegida papelMinimo="professor">
-            <UsuariosListPage />
-          </Protegida>
+          <ProtegidaGestao>
+            <ProblemaGestaoDetalhePage />
+          </ProtegidaGestao>
         }
       />
-      <Route path="/perfil" element={<Protegida><MeuPerfilPage /></Protegida>} />
-      <Route path="/acessibilidade" element={<Protegida><AcessibilidadePage /></Protegida>} />
+      <Route
+        path="/gestao/problemas/:problemaId/dicas/:alunoId"
+        element={
+          <ProtegidaGestao>
+            <PainelDicasAlunoPage />
+          </ProtegidaGestao>
+        }
+      />
 
       <Route path="/nao-autorizado" element={<NaoAutorizadoPage />} />
       <Route path="/404" element={<NotFoundPage />} />

@@ -1,0 +1,31 @@
+/* Livro-razão: linhas pautadas, algarismos tabulares — a mesma grade da
+   página, só que densa o bastante para carregar dados. */
+.table__wrap {
+  overflow-x: auto;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body-sm);
+  font-variant-numeric: tabular-nums;
+}
+.table th, .table td {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-muted);
+  white-space: nowrap;
+}
+.table th {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--surface);
+  border-bottom: 1.5px solid var(--border);
+}
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr:hover { background: var(--surface); }

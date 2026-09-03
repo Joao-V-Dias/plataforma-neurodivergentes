@@ -1,0 +1,30 @@
+.novo-problema__form { display: flex; flex-direction: column; gap: var(--space-5); max-width: 42rem; }
+.novo-problema__linha { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.novo-problema__tags { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+
+.novo-problema__casos { display: flex; flex-direction: column; gap: var(--space-3); }
+.novo-problema__casos-cabecalho { display: flex; align-items: center; justify-content: space-between; }
+.novo-problema__caso {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--surface);
+}
+.novo-problema__caso-linha { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.novo-problema__caso-rodape { display: flex; align-items: center; justify-content: space-between; }
+.novo-problema__remover {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem;
+  cursor: pointer;
+}
+.novo-problema__remover:hover { color: var(--red); border-color: var(--red); }
+
+@media (max-width: 640px) {
+  .novo-problema__linha, .novo-problema__caso-linha { grid-template-columns: 1fr; }
+}

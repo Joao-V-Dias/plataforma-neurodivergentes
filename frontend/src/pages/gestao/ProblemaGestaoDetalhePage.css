@@ -1,0 +1,4 @@
+.problema-gestao__enunciado { display: flex; flex-direction: column; gap: var(--space-5); }
+.problema-gestao__enunciado > p { max-width: 42rem; white-space: pre-wrap; color: var(--text-secondary); font-size: var(--text-body-sm); }
+.problema-gestao__enunciado code { font-size: var(--text-code); white-space: pre-wrap; }
+.problema-gestao__id-truncado { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-secondary); }

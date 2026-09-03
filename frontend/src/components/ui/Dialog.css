@@ -1,0 +1,37 @@
+.dialog__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 90;
+}
+.dialog__content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(32rem, calc(100vw - 2.5rem));
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  background: var(--elevated);
+  border: 2px solid var(--border);
+  padding: var(--space-5);
+  z-index: 91;
+}
+.dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.dialog__titulo { font-size: var(--text-h4); font-weight: 700; }
+.dialog__descricao { margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-body-sm); }
+.dialog__fechar {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.dialog__fechar:hover { background: var(--surface); color: var(--text); }
+.dialog__corpo { margin-top: var(--space-4); }

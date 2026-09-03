@@ -1,22 +1,15 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import * as authApi from '@/lib/api/auth'
-import {
-  limparTokens,
-  obterRefreshToken,
-  salvarTokens,
-  temSessaoPersistida,
-} from '@/lib/api/tokenStorage'
+import { obterMe, login as loginRequest, logout as logoutRequest } from '@/lib/api/auth'
 import { registrarCallbackSessaoExpirada } from '@/lib/api/client'
-import type { UsuarioPublico } from '@/lib/api/types'
+import { limparTokens, obterAccessToken, obterRefreshToken, salvarTokens } from '@/lib/api/tokenStorage'
+import type { LoginRequest, UsuarioPublico } from '@/lib/api/types'
 
 interface AuthContextValue {
   usuario: UsuarioPublico | null
   carregando: boolean
-  login: (email: string, senha: string) => Promise<UsuarioPublico>
-  logout: () => Promise<void>
-  /** Recarrega o usuário atual (ex: depois de mudar preferências que
-   * afetam o próprio registro) sem exigir novo login. */
-  atualizarUsuario: () => Promise<void>
+  entrar: (payload: LoginRequest) => Promise<UsuarioPublico>
+  sair: () => Promise<void>
+  recarregarUsuario: () => Promise<void>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -26,69 +19,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<UsuarioPublico | null>(null)
   const [carregando, setCarregando] = useState(true)
 
-  useEffect(() => {
-    let ativo = true
-
-    async function bootstrap() {
-      if (!temSessaoPersistida()) {
-        setCarregando(false)
-        return
-      }
-      try {
-        const atual = await authApi.obterUsuarioAtual()
-        if (ativo) setUsuario(atual)
-      } catch {
-        limparTokens()
-        if (ativo) setUsuario(null)
-      } finally {
-        if (ativo) setCarregando(false)
-      }
+  const carregarUsuario = useCallback(async () => {
+    if (!obterAccessToken()) {
+      setUsuario(null)
+      setCarregando(false)
+      return
     }
-
-    void bootstrap()
-    return () => {
-      ativo = false
+    try {
+      const me = await obterMe()
+      setUsuario(me)
+    } catch {
+      limparTokens()
+      setUsuario(null)
+    } finally {
+      setCarregando(false)
     }
   }, [])
 
   useEffect(() => {
-    registrarCallbackSessaoExpirada(() => setUsuario(null))
-  }, [])
+    // Bootstrap de sessão a partir do token salvo - roda uma vez ao montar,
+    // fora do fluxo de dados do react-query (que ainda não existe aqui em
+    // cima da árvore de providers).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void carregarUsuario()
+    registrarCallbackSessaoExpirada(() => {
+      setUsuario(null)
+    })
+  }, [carregarUsuario])
 
-  const login = useCallback(async (email: string, senha: string) => {
-    const tokens = await authApi.login({ email, senha })
+  const entrar = useCallback(async (payload: LoginRequest) => {
+    const tokens = await loginRequest(payload)
     salvarTokens({
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       accessTokenExpiresAt: tokens.access_token_expires_at,
     })
-    const atual = await authApi.obterUsuarioAtual()
-    setUsuario(atual)
-    return atual
+    const me = await obterMe()
+    setUsuario(me)
+    return me
   }, [])
 
-  const logout = useCallback(async () => {
+  const sair = useCallback(async () => {
     const refreshToken = obterRefreshToken()
-    if (refreshToken) {
-      try {
-        await authApi.logout(refreshToken)
-      } catch {
-        // Best-effort: mesmo se a chamada falhar (ex: rede), a sessão
-        // local é sempre encerrada.
-      }
+    try {
+      if (refreshToken) await logoutRequest(refreshToken)
+    } catch {
+      // segue o fluxo mesmo se a chamada de logout falhar - o token local
+      // é limpo de qualquer forma.
     }
     limparTokens()
     setUsuario(null)
   }, [])
 
-  const atualizarUsuario = useCallback(async () => {
-    const atual = await authApi.obterUsuarioAtual()
-    setUsuario(atual)
-  }, [])
-
-  const value = useMemo(
-    () => ({ usuario, carregando, login, logout, atualizarUsuario }),
-    [usuario, carregando, login, logout, atualizarUsuario],
+  const value = useMemo<AuthContextValue>(
+    () => ({ usuario, carregando, entrar, sair, recarregarUsuario: carregarUsuario }),
+    [usuario, carregando, entrar, sair, carregarUsuario],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

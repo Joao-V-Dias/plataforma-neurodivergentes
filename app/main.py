@@ -11,6 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dicas import router as dicas_router
+from app.api.v1.gamificacao import router as gamificacao_router
 from app.api.v1.health import router as health_router
 from app.api.v1.perfis import router as perfis_router
 from app.api.v1.problemas import router as problemas_router
@@ -23,6 +24,7 @@ from app.core.middleware import RequestIDMiddleware
 from app.core.monitoring import configurar_metricas, configurar_sentry
 from app.core.rate_limit import limiter
 from app.core.security_headers import SecurityHeadersMiddleware
+from app.foto_perfil.router import router as foto_perfil_router
 
 settings = get_settings()
 configure_logging()
@@ -80,3 +82,5 @@ app.include_router(perfis_router, prefix=settings.api_v1_prefix)
 app.include_router(turmas_router, prefix=settings.api_v1_prefix)
 app.include_router(problemas_router, prefix=settings.api_v1_prefix)
 app.include_router(dicas_router, prefix=settings.api_v1_prefix)
+app.include_router(gamificacao_router, prefix=settings.api_v1_prefix)
+app.include_router(foto_perfil_router, prefix=settings.api_v1_prefix)

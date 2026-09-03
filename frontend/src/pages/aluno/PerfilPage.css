@@ -1,0 +1,50 @@
+.perfil-pagina h1 { font-size: var(--text-h2); font-weight: 700; margin-bottom: var(--space-5); }
+
+.perfil-avatar { display: flex; flex-direction: column; gap: var(--space-5); max-width: 30rem; }
+.perfil-avatar__foto { display: flex; flex-direction: column; gap: var(--space-2); }
+.perfil-avatar__subtitulo { font-size: var(--text-body-sm); font-weight: 700; margin: 0; }
+.perfil-avatar__dica { font-size: var(--text-caption); color: var(--text-secondary); margin: 0; }
+.perfil-avatar__grade { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.perfil-avatar__opcao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+}
+.perfil-avatar__opcao:hover { border-color: var(--text-muted); }
+.perfil-avatar__opcao[data-selecionado='true'] { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.perfil-neuro { max-width: 34rem; }
+.perfil-neuro__intro { color: var(--text-secondary); font-size: var(--text-body-sm); margin-bottom: var(--space-5); }
+.perfil-neuro__linha-tempo { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.perfil-neuro__linha-tempo li {
+  border-left: 2px solid var(--border);
+  padding: 0 0 var(--space-3) var(--space-4);
+}
+.perfil-neuro__versao-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.perfil-neuro__condicoes { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.perfil-neuro__condicoes li {
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.1rem 0.5rem;
+  font-size: var(--text-caption);
+}
+.perfil-neuro__sem-condicoes { margin-top: var(--space-2); color: var(--text-muted); font-size: var(--text-body-sm); }
+.perfil-neuro__observacoes { margin-top: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); }
+.perfil-neuro__form { display: flex; flex-direction: column; gap: var(--space-3); }

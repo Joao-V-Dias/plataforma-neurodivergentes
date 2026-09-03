@@ -1,85 +1,97 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Lightbulb, Sparkles } from 'lucide-react'
-import * as dicasApi from '@/lib/api/dicas'
-import { NIVEL_DICA_LABEL } from '@/lib/api/types'
-import { Card, CardHeader } from '@/components/ui/Card'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Lightbulb } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { Alert } from '@/components/ui/Alert'
 import { BotaoOuvir } from '@/components/ui/BotaoOuvir'
+import { EmptyState, ErrorState } from '@/components/ui/EmptyState'
 import { PageSpinner } from '@/components/ui/Spinner'
-import { mensagemDeErro } from '@/lib/api/errors'
+import { paraErroApi } from '@/lib/api/errors'
+import { listarMinhasDicas, pedirDica } from '@/lib/api/dicas'
+import { NIVEL_DICA_LABEL } from '@/lib/api/types'
+import './DicasPanel.css'
 
 const NIVEL_MAXIMO = 4
 
-/** Motor de dicas progressivas (Parte 6): o aluno só pode pedir a
- * "próxima" dica - o nível é sempre calculado pelo servidor a partir do
- * que já foi dado (ver app/services/dica_service.py), então esta UI nunca
- * oferece escolher um nível diretamente. */
 export function DicasPanel({ problemaId }: { problemaId: string }) {
   const queryClient = useQueryClient()
+  const [pedindo, setPedindo] = useState(false)
+  const [avisoNivelMaximo, setAvisoNivelMaximo] = useState(false)
+  const [iaIndisponivel, setIaIndisponivel] = useState(false)
 
-  const { data: dicas, isLoading } = useQuery({
+  const dicasQuery = useQuery({
     queryKey: ['minhas-dicas', problemaId],
-    queryFn: () => dicasApi.listarMinhasDicas(problemaId),
+    queryFn: () => listarMinhasDicas(problemaId),
   })
 
-  const mutation = useMutation({
-    mutationFn: () => dicasApi.solicitarDica(problemaId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['minhas-dicas', problemaId] })
-    },
-  })
+  const dicas = dicasQuery.data ?? []
+  const proximoNivel = dicas.length + 1
+  const noNivelMaximo = dicas.length >= NIVEL_MAXIMO
 
-  const nivelMaximoRecebido = dicas?.reduce((max, d) => Math.max(max, d.nivel), 0) ?? 0
-  const atingiuLimite = nivelMaximoRecebido >= NIVEL_MAXIMO
+  async function handlePedirDica() {
+    setAvisoNivelMaximo(false)
+    setIaIndisponivel(false)
+    setPedindo(true)
+    try {
+      await pedirDica(problemaId)
+      await queryClient.invalidateQueries({ queryKey: ['minhas-dicas', problemaId] })
+    } catch (erro) {
+      const e = paraErroApi(erro)
+      if (e.code === 'conflict') setAvisoNivelMaximo(true)
+      else if (e.code === 'service_unavailable') setIaIndisponivel(true)
+    } finally {
+      setPedindo(false)
+    }
+  }
 
   return (
-    <Card>
-      <CardHeader
-        title="Dicas"
-        description="Cada dica é uma etapa: pergunta, conceito, roteiro e, por fim, uma solução comentada."
-      />
+    <div className="dicas-painel">
+      <p className="dicas-painel__intro">
+        Dicas progressivas: cada pedido revela um nível a mais de ajuda, começando por uma pergunta
+        que te leva a pensar, até uma solução comentada. Pedir uma dica não afeta sua nota.
+      </p>
 
-      {isLoading && <PageSpinner label="Carregando dicas..." />}
-
-      {dicas && dicas.length === 0 && (
-        <p className="mb-4 text-sm text-[var(--color-muted)]">
-          Ainda sem dicas para este problema. Tente resolver sozinho primeiro - se travar, peça uma dica.
-        </p>
+      {dicasQuery.isLoading && <PageSpinner />}
+      {dicasQuery.isError && (
+        <ErrorState mensagem={paraErroApi(dicasQuery.error).message} onRetry={() => dicasQuery.refetch()} />
+      )}
+      {dicasQuery.data && dicas.length === 0 && !dicasQuery.isLoading && (
+        <EmptyState titulo="Nenhuma dica pedida ainda" descricao="Tente resolver por conta própria primeiro — você pode pedir ajuda a qualquer momento." />
       )}
 
-      {dicas && dicas.length > 0 && (
-        <ol className="mb-4 flex flex-col gap-3">
-          {[...dicas]
-            .sort((a, b) => a.nivel - b.nivel)
-            .map((dica) => (
-              <li key={dica.id} className="rounded-md border border-[var(--color-border)] p-3">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <Badge tone="primary">
-                    Nível {dica.nivel} · {NIVEL_DICA_LABEL[dica.nivel]}
-                  </Badge>
-                  <BotaoOuvir texto={dica.conteudo} rotulo="esta dica" />
-                </div>
-                <p className="whitespace-pre-wrap text-sm text-[var(--color-fg)]">{dica.conteudo}</p>
-              </li>
-            ))}
+      {dicas.length > 0 && (
+        <ol className="dicas-painel__lista">
+          {dicas.map((dica) => (
+            <li key={dica.id} className="dicas-painel__item">
+              <div className="dicas-painel__item-cabecalho">
+                <Lightbulb size={14} />
+                <span>
+                  Nível {dica.nivel} — {NIVEL_DICA_LABEL[dica.nivel]}
+                </span>
+              </div>
+              <p>{dica.conteudo}</p>
+              <BotaoOuvir texto={dica.conteudo} />
+            </li>
+          ))}
         </ol>
       )}
 
-      {mutation.isError && <Alert tone="danger">{mensagemDeErro(mutation.error)}</Alert>}
-
-      {atingiuLimite ? (
-        <p className="flex items-center gap-2 text-sm text-[var(--color-muted)]">
-          <Sparkles className="h-4 w-4" aria-hidden="true" />
-          Você já recebeu a dica de nível mais alto para este problema.
+      {iaIndisponivel && (
+        <p className="dicas-painel__aviso" role="alert">
+          O gerador de dicas está indisponível no momento. Você pode continuar submetendo seu
+          código normalmente e tentar pedir a dica novamente em instantes.
         </p>
-      ) : (
-        <Button variant="secondary" carregando={mutation.isPending} onClick={() => mutation.mutate()}>
-          <Lightbulb className="h-4 w-4" aria-hidden="true" />
-          Pedir dica
+      )}
+      {avisoNivelMaximo && (
+        <p className="dicas-painel__aviso" role="status">
+          Você já recebeu todas as dicas disponíveis para este problema.
+        </p>
+      )}
+
+      {!noNivelMaximo && (
+        <Button variante="secundario" carregando={pedindo} onClick={() => void handlePedirDica()}>
+          Pedir dica (nível {proximoNivel})
         </Button>
       )}
-    </Card>
+    </div>
   )
 }

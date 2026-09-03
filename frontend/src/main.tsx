@@ -1,34 +1,25 @@
+import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import App from './App'
+import { ToastViewport } from './components/ui/Toast'
+import { AccessibilityProvider } from './lib/accessibility/AccessibilityContext'
+import { AuthProvider } from './lib/auth/AuthContext'
+import { queryClient } from './lib/queryClient'
 import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from '@/lib/auth/AuthContext'
-import { AccessibilityProvider } from '@/lib/accessibility/AccessibilityContext'
-import { ToastProvider } from '@/components/ui/Toast'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ToastProvider>
-            <AccessibilityProvider>
-              <App />
-            </AccessibilityProvider>
-          </ToastProvider>
+          <AccessibilityProvider>
+            <App />
+            <ToastViewport />
+          </AccessibilityProvider>
         </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
   </StrictMode>,
 )

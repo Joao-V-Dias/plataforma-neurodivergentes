@@ -1,14 +1,14 @@
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { Link, useLocation, useNavigate, type Location } from 'react-router-dom'
 import { AuthLayout } from './AuthLayout'
-import { InputField } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { Alert } from '@/components/ui/Alert'
+import { Field } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Input'
+import { paraErroApi } from '@/lib/api/errors'
 import { useAuth } from '@/lib/auth/useAuth'
-import { mensagemDeErro } from '@/lib/api/errors'
 import { emailSchema } from '@/lib/validation'
 
 const schema = z.object({
@@ -18,7 +18,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { entrar } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [erroGeral, setErroGeral] = useState<string | null>(null)
@@ -32,45 +32,53 @@ export function LoginPage() {
   async function onSubmit(values: FormValues) {
     setErroGeral(null)
     try {
-      await login(values.email, values.senha)
-      const estado = location.state as { from?: Location } | null
-      const destino = estado?.from?.pathname ?? '/'
-      navigate(destino, { replace: true })
+      const usuario = await entrar(values)
+      const destino = (location.state as { de?: string } | null)?.de
+      if (!usuario.is_active) {
+        navigate('/aguardando-aprovacao', { replace: true })
+        return
+      }
+      navigate(destino ?? '/', { replace: true })
     } catch (erro) {
-      setErroGeral(mensagemDeErro(erro))
+      setErroGeral(paraErroApi(erro).message)
     }
   }
 
   return (
-    <AuthLayout title="Entrar" subtitle="Acesse sua conta para continuar.">
-      <form className="flex flex-col gap-4" onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
-        {erroGeral && <Alert tone="danger">{erroGeral}</Alert>}
-        <InputField
-          label="E-mail"
-          type="email"
-          autoComplete="email"
-          erro={errors.email?.message}
-          {...register('email')}
-        />
-        <InputField
-          label="Senha"
-          type="password"
-          autoComplete="current-password"
-          erro={errors.senha?.message}
-          {...register('senha')}
-        />
-        <Button type="submit" carregando={isSubmitting} className="mt-2 justify-center">
+    <AuthLayout
+      titulo="Entrar"
+      subtitulo="Acesse sua turma e continue de onde parou."
+      rodape={
+        <>
+          Ainda não tem conta? <Link to="/cadastro">Criar conta de aluno</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Field label="E-mail" htmlFor="email" erro={errors.email?.message} obrigatorio>
+          <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
+        </Field>
+        <Field label="Senha" htmlFor="senha" erro={errors.senha?.message} obrigatorio>
+          <Input
+            id="senha"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={!!errors.senha}
+            {...register('senha')}
+          />
+        </Field>
+        {erroGeral && (
+          <p className="field__erro" role="alert">
+            {erroGeral}
+          </p>
+        )}
+        <Button type="submit" carregando={isSubmitting} style={{ width: '100%', marginTop: 'var(--space-2)' }}>
           Entrar
         </Button>
-        <div className="flex justify-between text-sm">
-          <Link to="/esqueci-senha" className="text-[var(--color-primary)] hover:underline">
-            Esqueci minha senha
-          </Link>
-          <Link to="/cadastro" className="text-[var(--color-primary)] hover:underline">
-            Criar conta de aluno
-          </Link>
-        </div>
       </form>
+      <p style={{ textAlign: 'center', fontSize: 'var(--text-body-sm)' }}>
+        <Link to="/esqueci-senha">Esqueci minha senha</Link>
+      </p>
     </AuthLayout>
   )
 }

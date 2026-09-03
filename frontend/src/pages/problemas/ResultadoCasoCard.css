@@ -1,0 +1,40 @@
+.resultado-caso {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+}
+.resultado-caso[data-passou='true'] { border-color: color-mix(in srgb, var(--green) 45%, var(--border)); }
+.resultado-caso[data-passou='false'] { border-color: color-mix(in srgb, var(--red) 45%, var(--border)); }
+
+.resultado-caso__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+}
+.resultado-caso__icone-ok { color: var(--green); }
+.resultado-caso__icone-erro { color: var(--red); }
+.resultado-caso__oculto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--text-muted);
+  font-size: var(--text-caption);
+  font-weight: 400;
+}
+.resultado-caso__tempo { margin-left: auto; color: var(--text-muted); font-size: var(--text-caption); font-weight: 400; }
+
+.resultado-caso__detalhes { margin: var(--space-3) 0 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.resultado-caso__detalhes dt { font-size: var(--text-caption); color: var(--text-secondary); }
+.resultado-caso__detalhes dd { margin: 2px 0 0; }
+.resultado-caso__detalhes code {
+  display: block;
+  background: var(--bg);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

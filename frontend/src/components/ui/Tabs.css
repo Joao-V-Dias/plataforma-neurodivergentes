@@ -1,0 +1,20 @@
+.tabs__list {
+  display: flex;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-5);
+}
+.tabs__trigger {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  padding: var(--space-3) 0.1rem;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+.tabs__trigger:hover { color: var(--text); }
+.tabs__trigger[data-state='active'] { color: var(--text); border-bottom-color: var(--accent); }
+.tabs__conteudo:focus-visible { outline: none; }

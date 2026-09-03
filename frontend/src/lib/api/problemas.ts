@@ -1,16 +1,16 @@
 import { apiClient } from './client'
 import type {
-  CategoriaTag,
   CriarProblemaRequest,
   ProblemaDetalheResponse,
   ProblemaResponse,
+  SubmeterCodigoRequest,
   SubmissaoResponse,
   SubmissaoResumoResponse,
   TagPublica,
 } from './types'
 
-export async function listarTags(categoria?: CategoriaTag): Promise<TagPublica[]> {
-  const { data } = await apiClient.get<TagPublica[]>('/tags', { params: { categoria } })
+export async function listarTags(): Promise<TagPublica[]> {
+  const { data } = await apiClient.get<TagPublica[]>('/tags')
   return data
 }
 
@@ -40,18 +40,16 @@ export async function vincularProblemaATurma(problemaId: string, turmaId: string
 
 export async function submeterCodigo(
   problemaId: string,
-  codigoFonte: string,
+  payload: SubmeterCodigoRequest,
 ): Promise<SubmissaoResponse> {
   const { data } = await apiClient.post<SubmissaoResponse>(
     `/problemas/${problemaId}/submissoes`,
-    { codigo_fonte: codigoFonte },
+    payload,
   )
   return data
 }
 
-export async function listarMinhasSubmissoes(
-  problemaId: string,
-): Promise<SubmissaoResumoResponse[]> {
+export async function listarMinhasSubmissoes(problemaId: string): Promise<SubmissaoResumoResponse[]> {
   const { data } = await apiClient.get<SubmissaoResumoResponse[]>(
     `/problemas/${problemaId}/minhas-submissoes`,
   )

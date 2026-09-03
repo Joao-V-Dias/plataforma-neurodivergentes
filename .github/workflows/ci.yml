@@ -111,12 +111,44 @@ jobs:
       - name: Build de producao
         run: npm run build
 
+  battle-service:
+    name: Battle-service (lint, smoke test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: battle-service
+
+    # Servico standalone (processo/porta/deploy proprios, ver
+    # battle-service/README.md) - so precisa do mesmo segredo que assina o
+    # access token da API principal, nunca chama a API nem acessa o banco.
+    env:
+      SECRET_KEY: ci-secret-key-nao-usar-em-producao-0123456789abcdef
+      JWT_ALGORITHM: HS256
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: battle-service/requirements.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt ruff
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Smoke test (importa a app FastAPI)
+        run: python -c "import main"
+
   docker:
     name: Build da imagem Docker
     runs-on: ubuntu-latest
     # So valida o build da imagem depois que o codigo ja passou nos
     # testes - nao adianta empacotar algo que acabou de quebrar.
-    needs: [backend, frontend]
+    needs: [backend, frontend, battle-service]
 
     steps:
       - uses: actions/checkout@v4

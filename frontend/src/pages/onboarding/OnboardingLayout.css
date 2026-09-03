@@ -1,0 +1,54 @@
+.onboarding {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: var(--bg);
+}
+.onboarding__card {
+  width: 100%;
+  max-width: 34rem;
+}
+.onboarding__trilha {
+  display: flex;
+  list-style: none;
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  gap: var(--space-2);
+}
+.onboarding__etapa {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+.onboarding__marcador {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.onboarding__etapa[data-estado='atual'] .onboarding__marcador { border-color: var(--accent); color: var(--accent); }
+.onboarding__etapa[data-estado='concluida'] .onboarding__marcador { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.onboarding__nome-etapa { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.onboarding__etapa[data-estado='atual'] .onboarding__nome-etapa { color: var(--text); font-weight: 600; }
+
+.onboarding__conteudo {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+.onboarding__titulo { font-size: var(--text-h3); font-weight: 700; }
+.onboarding__subtitulo { margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-body-sm); }
+.onboarding__corpo { margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.onboarding__acoes { margin-top: var(--space-6); display: flex; justify-content: space-between; gap: var(--space-3); }

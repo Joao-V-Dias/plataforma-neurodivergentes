@@ -1,0 +1,31 @@
+.dicas-painel { display: flex; flex-direction: column; gap: var(--space-4); max-width: 40rem; }
+.dicas-painel__intro { color: var(--text-secondary); font-size: var(--text-body-sm); }
+.dicas-painel__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.dicas-painel__item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--surface);
+}
+.dicas-painel__item-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.dicas-painel__item p { font-size: var(--text-body-sm); white-space: pre-wrap; }
+.dicas-painel__aviso {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  background: var(--surface);
+}

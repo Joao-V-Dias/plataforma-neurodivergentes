@@ -1,7 +1,7 @@
 import { apiClient } from './client'
 import type { DicaComEficaciaResponse, DicaResponse } from './types'
 
-export async function solicitarDica(problemaId: string): Promise<DicaResponse> {
+export async function pedirDica(problemaId: string): Promise<DicaResponse> {
   const { data } = await apiClient.post<DicaResponse>(`/problemas/${problemaId}/dicas`)
   return data
 }

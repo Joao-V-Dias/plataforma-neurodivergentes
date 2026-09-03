@@ -1,0 +1,10 @@
+.gestao-acao-topo { margin-bottom: var(--space-4); }
+.gestao-link-perigo {
+  background: none;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  font-size: var(--text-caption);
+  padding: 0;
+  text-decoration: underline;
+}

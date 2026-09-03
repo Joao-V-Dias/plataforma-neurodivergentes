@@ -1,0 +1,8 @@
+.code-editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
+.code-editor .cm-editor { height: 24rem; }

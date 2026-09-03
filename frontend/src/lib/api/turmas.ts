@@ -53,8 +53,6 @@ export async function listarMinhasTurmas(): Promise<TurmaResponse[]> {
 }
 
 export async function obterMeuProgresso(turmaId: string): Promise<ProgressoAlunoResponse> {
-  const { data } = await apiClient.get<ProgressoAlunoResponse>(
-    `/me/turmas/${turmaId}/progresso`,
-  )
+  const { data } = await apiClient.get<ProgressoAlunoResponse>(`/me/turmas/${turmaId}/progresso`)
   return data
 }
